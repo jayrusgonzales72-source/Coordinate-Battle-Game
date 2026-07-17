@@ -1,0 +1,4572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Coordinate Battle · The Lost Grid</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+    <style>
+        * {
+            box-sizing: border-box;
+            image-rendering: pixelated;
+            -webkit-tap-highlight-color: transparent;
+        }
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            background: #080c18;
+            font-family: 'VT323', monospace;
+            color: #eaf2ff;
+            touch-action: manipulation;
+            overflow: hidden;
+        }
+        .pixel-font {
+            font-family: 'Press Start 2P', monospace;
+        }
+
+        .device {
+            width: 100%;
+            max-width: 540px;
+            margin: 0 auto;
+            background: #0b0f1a;
+            border: 3px solid #1f2d4a;
+            border-radius: 18px 18px 12px 12px;
+            box-shadow: 0 0 0 2px #000, 0 20px 60px rgba(0, 0, 0, 0.85), inset 0 0 60px rgba(0, 20, 40, 0.4);
+            position: relative;
+            overflow: hidden;
+            height: 100vh;
+            max-height: 900px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* SPLASH */
+        .splash-screen {
+            position: absolute;
+            inset: 0;
+            z-index: 400;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #080c18;
+            transition: opacity 0.8s ease, transform 0.8s ease;
+            padding: 20px;
+            pointer-events: all;
+        }
+        .splash-screen.hide {
+            opacity: 0;
+            transform: scale(1.08);
+            pointer-events: none;
+        }
+        .splash-content {
+            text-align: center;
+            max-width: 400px;
+        }
+        .splash-logo {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(36px, 12vw, 64px);
+            color: #f2c14e;
+            text-shadow: 0 0 30px #f2c14e, 0 0 60px rgba(242, 193, 78, 0.5), 4px 4px 0 #000;
+            animation: splashPulse 2.2s ease-in-out infinite;
+            line-height: 1.2;
+            letter-spacing: 2px;
+        }
+        .splash-sub {
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            color: #5be7d9;
+            margin-top: 8px;
+            letter-spacing: 4px;
+            text-shadow: 0 0 20px rgba(91, 231, 217, 0.3);
+        }
+        .splash-version {
+            font-size: 10px;
+            color: #4d5e7a;
+            margin-top: 20px;
+            letter-spacing: 1px;
+            opacity: 0.5;
+        }
+        .splash-hint {
+            font-family: 'VT323', monospace;
+            font-size: 12px;
+            color: #6d7ea3;
+            margin-top: 24px;
+            animation: hintPulse 1.8s ease-in-out infinite;
+            letter-spacing: 1px;
+        }
+        @keyframes splashPulse {
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+                text-shadow: 0 0 30px #f2c14e, 0 0 60px rgba(242, 193, 78, 0.5), 4px 4px 0 #000;
+            }
+            50% {
+                transform: scale(1.04);
+                opacity: .95;
+                text-shadow: 0 0 50px #f2c14e, 0 0 100px rgba(242, 193, 78, 0.7), 4px 4px 0 #000;
+            }
+        }
+        @keyframes hintPulse {
+            0%,
+            100% {
+                opacity: .4;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
+        /* LOADING */
+        .loading-screen {
+            position: absolute;
+            inset: 0;
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(ellipse at 50% 30%, #0d0b1a, #020208 90%);
+            transition: opacity 0.9s ease, transform 0.9s cubic-bezier(.34, 1.56, .64, 1);
+            padding: 20px;
+            overflow: hidden;
+        }
+        .loading-screen.hide {
+            opacity: 0;
+            transform: scale(1.08);
+            pointer-events: none;
+        }
+        .loading-bg-grid {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(circle at 20% 30%, rgba(91, 231, 217, 0.04) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(242, 193, 78, 0.04) 0%, transparent 50%),
+                repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(91, 231, 217, 0.02) 40px, rgba(91, 231, 217, 0.02) 41px);
+            animation: driftGrid 25s linear infinite;
+            opacity: 0.8;
+        }
+        @keyframes driftGrid {
+            0% {
+                background-position: 0 0;
+            }
+            100% {
+                background-position: 100px 100px;
+            }
+        }
+        .loading-rings {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .loading-ring {
+            position: absolute;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-style: solid;
+            animation: spinRing linear infinite;
+            filter: blur(1px);
+        }
+        .loading-ring:nth-child(1) {
+            width: 200px;
+            height: 200px;
+            border-width: 2px;
+            border-color: rgba(91, 231, 217, 0.25);
+            animation-duration: 16s;
+            box-shadow: 0 0 30px rgba(91, 231, 217, 0.1);
+        }
+        .loading-ring:nth-child(2) {
+            width: 280px;
+            height: 280px;
+            border-width: 3px;
+            border-color: rgba(242, 193, 78, 0.15);
+            animation-duration: 24s;
+            animation-direction: reverse;
+            border-style: dashed;
+        }
+        .loading-ring:nth-child(3) {
+            width: 360px;
+            height: 360px;
+            border-width: 4px;
+            border-color: rgba(232, 84, 75, 0.10);
+            animation-duration: 32s;
+            border-style: dotted;
+            filter: blur(2px);
+        }
+        .loading-ring:nth-child(4) {
+            width: 440px;
+            height: 440px;
+            border-width: 1px;
+            border-color: rgba(91, 231, 217, 0.08);
+            animation-duration: 40s;
+            animation-direction: alternate;
+            border-style: solid;
+        }
+        @keyframes spinRing {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+        .loading-particles {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .loading-particle {
+            position: absolute;
+            border-radius: 50%;
+            background: #5be7d9;
+            box-shadow: 0 0 12px #5be7d9;
+            animation: floatParticle linear infinite;
+        }
+        .loading-particle.gold {
+            background: #f2c14e;
+            box-shadow: 0 0 12px #f2c14e;
+        }
+        .loading-particle.red {
+            background: #e8544b;
+            box-shadow: 0 0 12px #e8544b;
+        }
+        @keyframes floatParticle {
+            0% {
+                transform: translateY(0) translateX(0) scale(1);
+                opacity: 0.9;
+            }
+            100% {
+                transform: translateY(-180px) translateX(40px) scale(0);
+                opacity: 0;
+            }
+        }
+        .loading-content {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+        }
+        .loading-logo {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(28px, 9vw, 52px);
+            color: #f2c14e;
+            text-shadow: 0 0 30px #f2c14e, 0 0 80px rgba(242, 193, 78, 0.5), 4px 4px 0 #000, 0 8px 40px rgba(0, 0, 0, 0.8);
+            animation: logoPulseLoad 2.2s ease-in-out infinite;
+            line-height: 1.1;
+            margin-bottom: 4px;
+            letter-spacing: 2px;
+        }
+        @keyframes logoPulseLoad {
+            0%,
+            100% {
+                text-shadow: 0 0 30px #f2c14e, 0 0 80px rgba(242, 193, 78, 0.5), 4px 4px 0 #000, 0 8px 40px rgba(0, 0, 0, 0.8);
+                color: #f2c14e;
+            }
+            50% {
+                text-shadow: 0 0 50px #f2c14e, 0 0 120px rgba(242, 193, 78, 0.7), 4px 4px 0 #000, 0 8px 60px rgba(0, 0, 0, 0.9);
+                color: #ffd966;
+            }
+        }
+        .loading-sub {
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            color: #9fb0d0;
+            letter-spacing: 3px;
+            margin-top: 2px;
+            text-shadow: 0 0 10px rgba(91, 231, 217, 0.3);
+            animation: flicker 3s step-end infinite;
+        }
+        @keyframes flicker {
+            0%,
+            100% {
+                opacity: 1
+            }
+            2% {
+                opacity: 0.2
+            }
+            4% {
+                opacity: 1
+            }
+            6% {
+                opacity: 0.5
+            }
+            8% {
+                opacity: 1
+            }
+            50% {
+                opacity: 1
+            }
+            52% {
+                opacity: 0.1
+            }
+            54% {
+                opacity: 1
+            }
+        }
+        .loading-gauge {
+            width: 220px;
+            max-width: 70vw;
+            height: 12px;
+            background: #0a0a18;
+            border: 2px solid #1f2d4a;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 16px;
+            box-shadow: 0 0 20px rgba(91, 231, 217, 0.15), inset 0 0 10px rgba(0, 0, 0, 0.6);
+            position: relative;
+        }
+        .loading-gauge-inner {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #5be7d9, #f2c14e, #e8544b);
+            animation: loadBar 3.2s cubic-bezier(.4, 0, .2, 1) forwards;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(242, 193, 78, 0.4);
+            position: relative;
+        }
+        .loading-gauge-inner::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: gaugeShine 1.5s ease-in-out infinite;
+        }
+        @keyframes gaugeShine {
+            0% {
+                transform: translateX(-100%);
+            }
+            100% {
+                transform: translateX(100%);
+            }
+        }
+        @keyframes loadBar {
+            0% {
+                width: 0%;
+            }
+            100% {
+                width: 100%;
+            }
+        }
+        .loading-percent {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 11px;
+            color: #f2c14e;
+            margin-top: 6px;
+            text-shadow: 0 0 12px rgba(242, 193, 78, 0.4);
+            letter-spacing: 1px;
+        }
+        .loading-status {
+            font-family: 'VT323', monospace;
+            font-size: 14px;
+            color: #6d7ea3;
+            margin-top: 10px;
+            letter-spacing: 2px;
+            animation: statusPulse 2s ease-in-out infinite;
+        }
+        @keyframes statusPulse {
+            0%,
+            100% {
+                opacity: 0.6
+            }
+            50% {
+                opacity: 1
+            }
+        }
+        .loading-version {
+            font-size: 10px;
+            color: #4d5e7a;
+            margin-top: 14px;
+            letter-spacing: 1px;
+            opacity: 0.5;
+        }
+
+        /* INTRO */
+        .intro {
+            position: absolute;
+            inset: 0;
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 18px 14px 16px;
+            background: radial-gradient(ellipse at 50% 20%, #1a345a, #0a1222 70%, #04080f);
+            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(.34, 1.56, .64, 1);
+        }
+        .intro.show {
+            display: flex;
+            opacity: 1;
+            transform: scale(1);
+        }
+        .intro.hide {
+            opacity: 0;
+            transform: scale(1.06);
+            pointer-events: none;
+        }
+        .intro-grid {
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(to right, rgba(91, 231, 217, 0.06) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(91, 231, 217, 0.06) 1px, transparent 1px);
+            background-size: 28px 28px;
+            animation: driftGrid 18s linear infinite;
+        }
+        .intro-stars {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+        }
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #fff;
+            border-radius: 50%;
+            animation: twinkle 2.8s ease-in-out infinite;
+        }
+        @keyframes twinkle {
+            0%,
+            100% {
+                opacity: 0.15
+            }
+            50% {
+                opacity: 1
+            }
+        }
+        .intro-content {
+            position: relative;
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 440px;
+        }
+        .intro-logo {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(20px, 5.8vw, 34px);
+            color: #5be7d9;
+            text-align: center;
+            letter-spacing: 2px;
+            margin-top: 4px;
+            text-shadow: 0 0 10px #5be7d9, 0 0 30px rgba(91, 231, 217, 0.5), 4px 4px 0 #000;
+            animation: logoPulse 2.6s ease-in-out infinite;
+            line-height: 1.3;
+        }
+        @keyframes logoPulse {
+            0%,
+            100% {
+                text-shadow: 0 0 10px #5be7d9, 0 0 30px rgba(91, 231, 217, 0.5), 4px 4px 0 #000;
+                color: #5be7d9;
+            }
+            50% {
+                text-shadow: 0 0 16px #f2c14e, 0 0 40px rgba(242, 193, 78, 0.6), 4px 4px 0 #000;
+                color: #f2c14e;
+            }
+        }
+        .intro-sub {
+            font-size: 15px;
+            color: #9fb0d0;
+            margin: 8px 0 14px;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+        .intro-panel-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            color: #f2c14e;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        .intro-levels {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 7px;
+            width: 100%;
+            max-width: 480px;
+        }
+        .intro-card {
+            background: rgba(16, 25, 43, 0.92);
+            border: 2px solid #2a3a5c;
+            padding: 8px 9px;
+            cursor: pointer;
+            text-align: left;
+            transition: border-color 0.2s, transform 0.3s cubic-bezier(.34, 1.56, .64, 1), background 0.2s;
+            border-radius: 4px;
+        }
+        .intro-card:hover {
+            border-color: #2c8a7f;
+            transform: translateY(-2px) scale(1.02);
+        }
+        .intro-card.selected {
+            border-color: #f2c14e;
+            background: rgba(242, 193, 78, 0.10);
+            transform: scale(1.04);
+            box-shadow: 0 0 20px rgba(242, 193, 78, 0.15);
+        }
+        .intro-card .lv-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            color: #5be7d9;
+            margin-bottom: 3px;
+        }
+        .intro-card.selected .lv-title {
+            color: #f2c14e;
+        }
+        .intro-card .lv-desc {
+            font-size: 13px;
+            color: #b9c6e0;
+            line-height: 1.3;
+        }
+        .intro-mode {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin: 6px 0 14px;
+        }
+        .intro-mode-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            background: transparent;
+            color: #9fb0d0;
+            border: 2px solid #2a3a5c;
+            padding: 6px 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 4px;
+        }
+        .intro-mode-btn.active {
+            background: #f2c14e;
+            color: #000;
+            border-color: #f2c14e;
+            box-shadow: 0 0 20px rgba(242, 193, 78, 0.3);
+        }
+        .intro-start {
+            margin-top: 16px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            background: #f2c14e;
+            color: #1a1305;
+            border: none;
+            padding: 14px 28px;
+            cursor: pointer;
+            box-shadow: 0 0 0 3px #000, 0 0 30px rgba(242, 193, 78, 0.5);
+            animation: startPulse 1.8s cubic-bezier(.34, 1.56, .64, 1) infinite;
+            transition: transform 0.15s cubic-bezier(.34, 1.56, .64, 1);
+            border-radius: 4px;
+            letter-spacing: 1px;
+        }
+        .intro-start:active {
+            transform: scale(0.92);
+        }
+        @keyframes startPulse {
+            0%,
+            100% {
+                transform: scale(1)
+            }
+            50% {
+                transform: scale(1.06)
+            }
+        }
+        .intro-hint {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #6d7ea3;
+            text-align: center;
+        }
+
+        /* TOP BAR */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #050810;
+            padding: 6px 10px;
+            border-bottom: 2px solid #1f2d4a;
+            font-size: 10px;
+            flex-shrink: 0;
+            min-height: 44px;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .levels {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        .lv-chip {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 7px;
+            background: #0b0f1a;
+            color: #9fb0d0;
+            border: 2px solid #1f2d4a;
+            padding: 4px 6px;
+            cursor: pointer;
+            transition: transform 0.25s cubic-bezier(.34, 1.56, .64, 1), background 0.2s, border-color 0.2s;
+            border-radius: 3px;
+            white-space: nowrap;
+        }
+        .lv-chip:hover {
+            transform: translateY(-1px) scale(1.05);
+        }
+        .lv-chip.active {
+            color: #000;
+            background: #f2c14e;
+            border-color: #f2c14e;
+            transform: scale(1.08);
+        }
+        .topbar-right {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .score-tag {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            color: #f2c14e;
+            white-space: nowrap;
+            background: #0b0f1a;
+            padding: 3px 8px;
+            border: 2px solid #1f2d4a;
+            border-radius: 3px;
+        }
+        .score-tag span {
+            color: #fff;
+        }
+        .save-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 6px;
+            background: #1a2a1c;
+            color: #6fd67a;
+            border: 2px solid #3a5a2a;
+            padding: 3px 8px;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+        .save-btn:hover {
+            background: #223a24;
+            border-color: #6fd67a;
+        }
+        .save-btn:active {
+            transform: scale(0.92);
+        }
+
+        /* ARENA */
+        .arena {
+            position: relative;
+            flex: 1;
+            min-height: 220px;
+            overflow: hidden;
+            background: #0c1526;
+            touch-action: none;
+        }
+        .arena::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            box-shadow: inset 0 0 80px 30px rgba(0, 0, 0, 0.5);
+            z-index: 5;
+        }
+
+        #mapCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            z-index: 2;
+            touch-action: none;
+            background: #1a2a3a;
+            display: block;
+        }
+
+        .sprite-canvas {
+            position: absolute;
+            z-index: 3;
+            filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.5));
+            touch-action: none;
+            pointer-events: none;
+            transition: transform 0.3s cubic-bezier(.34, 1.56, .64, 1);
+            display: none;
+        }
+        .enemy-sprite {
+            top: 38px;
+            right: 40px;
+            animation: floaty 2.4s ease-in-out infinite;
+            width: 120px;
+            height: 120px;
+        }
+        .player-sprite {
+            bottom: 20px;
+            left: 30px;
+            animation: floaty 2.8s ease-in-out infinite;
+            width: 100px;
+            height: 100px;
+        }
+        @keyframes floaty {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+        .sprite-canvas.hit {
+            animation: hitshake 0.4s;
+            filter: brightness(2) saturate(0) drop-shadow(0 0 30px rgba(255, 255, 255, 0.6));
+        }
+        @keyframes hitshake {
+            0%,
+            100% {
+                transform: translateX(0) rotate(0)
+            }
+            20% {
+                transform: translateX(-10px) rotate(-3deg)
+            }
+            40% {
+                transform: translateX(10px) rotate(3deg)
+            }
+            60% {
+                transform: translateX(-6px) rotate(-2deg)
+            }
+            80% {
+                transform: translateX(6px) rotate(2deg)
+            }
+        }
+        .sprite-canvas.faint {
+            animation: faintdrop 0.7s forwards;
+        }
+        @keyframes faintdrop {
+            to {
+                transform: translateY(60px) scale(0.6);
+                opacity: 0;
+            }
+        }
+        .sprite-canvas.spawn-in {
+            animation: spriteBounceIn 0.6s cubic-bezier(.34, 1.56, .64, 1);
+        }
+        @keyframes spriteBounceIn {
+            0% {
+                transform: translateY(-40px) scale(0.3);
+                opacity: 0;
+            }
+            55% {
+                transform: translateY(8px) scale(1.10);
+                opacity: 1;
+            }
+            75% {
+                transform: translateY(-4px) scale(0.96);
+            }
+            100% {
+                transform: translateY(0) scale(1);
+            }
+        }
+        .player-sprite.dash {
+            animation: playerDash 0.4s cubic-bezier(.34, 1.56, .64, 1) forwards;
+        }
+        @keyframes playerDash {
+            0% {
+                transform: translateX(0) scale(1);
+            }
+            40% {
+                transform: translateX(70px) scale(1.2);
+            }
+            100% {
+                transform: translateX(0) scale(1);
+            }
+        }
+        .enemy-sprite.recoil {
+            animation: enemyRecoil 0.4s cubic-bezier(.34, 1.56, .64, 1) forwards;
+        }
+        @keyframes enemyRecoil {
+            0% {
+                transform: translateX(0);
+            }
+            30% {
+                transform: translateX(-40px) scale(0.8);
+            }
+            100% {
+                transform: translateX(0) scale(1);
+            }
+        }
+
+        .nameplate {
+            position: absolute;
+            background: rgba(11, 15, 26, 0.92);
+            border: 2px solid #1f2d4a;
+            padding: 5px 9px;
+            min-width: 130px;
+            z-index: 4;
+            border-radius: 4px;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+            display: none;
+        }
+        .nameplate.enemy-plate {
+            top: 10px;
+            left: 10px;
+        }
+        .nameplate.player-plate {
+            bottom: 10px;
+            right: 10px;
+        }
+        .nameplate .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            margin-bottom: 3px;
+        }
+        .nameplate .name {
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            color: #eaf2ff;
+        }
+        .nameplate .name.enemy-name {
+            color: #ff6b6b;
+        }
+        .hpbar {
+            display: flex;
+            gap: 2px;
+            height: 8px;
+            background: #000;
+            padding: 1px;
+            border: 2px solid #000;
+            border-radius: 2px;
+        }
+        .hpbar .seg {
+            flex: 1;
+            background: #1f2d4a;
+            border-radius: 1px;
+            transition: background 0.3s;
+        }
+        .hpbar .seg.on.enemy {
+            background: #e8544b;
+        }
+        .hpbar .seg.on.player {
+            background: #6fd67a;
+        }
+        .hp-label {
+            font-size: 9px;
+            color: #9fb0d0;
+            margin-top: 1px;
+            letter-spacing: 0.5px;
+        }
+        .nameplate.pulse {
+            animation: platePulse 0.35s cubic-bezier(.34, 1.56, .64, 1);
+        }
+        @keyframes platePulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.10);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* INVENTORY HUD */
+        .inventory-hud {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.85);
+            border: 2px solid #1f2d4a;
+            border-radius: 4px;
+            padding: 4px 8px;
+            display: none;
+            min-width: 80px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 6px;
+            color: #eaf2ff;
+            pointer-events: none;
+        }
+        .arena.adventure-mode .inventory-hud {
+            display: block;
+        }
+        .inventory-hud .inv-title {
+            color: #f2c14e;
+            font-size: 5px;
+            text-align: center;
+            margin-bottom: 3px;
+            border-bottom: 1px solid #1f2d4a;
+            padding-bottom: 2px;
+        }
+        .inventory-hud .inv-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 1px 0;
+            font-size: 6px;
+            gap: 6px;
+        }
+        .inventory-hud .inv-item .qty {
+            color: #5be7d9;
+        }
+
+        .adventure-hud {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            z-index: 10;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            color: #eaf2ff;
+            text-shadow: 2px 2px 0 #000;
+            display: none;
+            pointer-events: none;
+        }
+        .arena.adventure-mode .adventure-hud {
+            display: block;
+        }
+        .adventure-hud .quest {
+            background: rgba(0, 0, 0, 0.85);
+            padding: 5px 10px;
+            border: 2px solid #f2c14e;
+            border-radius: 3px;
+            max-width: 200px;
+            font-size: 7px;
+            line-height: 1.5;
+            color: #f2c14e;
+            text-shadow: none;
+        }
+        .adventure-hud .quest span {
+            color: #eaf2ff;
+        }
+        .adventure-hud .coords {
+            background: rgba(0, 0, 0, 0.75);
+            padding: 3px 8px;
+            border: 1px solid #1f2d4a;
+            border-radius: 3px;
+            margin-top: 4px;
+            font-size: 7px;
+            color: #5be7d9;
+        }
+        .adventure-hud .story-chapter {
+            background: rgba(0, 0, 0, 0.75);
+            padding: 3px 8px;
+            border: 1px solid #f2c14e;
+            border-radius: 3px;
+            margin-top: 4px;
+            font-size: 6px;
+            color: #f2c14e;
+            max-width: 200px;
+        }
+
+        .interact-hint {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 7px;
+            color: #f2c14e;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 4px 14px;
+            border: 2px solid #f2c14e;
+            border-radius: 4px;
+            animation: pulseHint 1.2s ease-in-out infinite;
+            display: none;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        .arena.adventure-mode .interact-hint {
+            display: block;
+        }
+        @keyframes pulseHint {
+            0%,
+            100% {
+                opacity: 0.6;
+                transform: translateX(-50%) scale(0.98)
+            }
+            50% {
+                opacity: 1;
+                transform: translateX(-50%) scale(1.04)
+            }
+        }
+
+        .adventure-controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 8;
+            display: none;
+            gap: 6px;
+            font-size: 10px;
+            color: #6d7ea3;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 4px 12px;
+            border-radius: 4px;
+            border: 1px solid #1f2d4a;
+            font-family: 'VT323', monospace;
+            pointer-events: none;
+        }
+        .arena.adventure-mode .adventure-controls {
+            display: flex;
+        }
+
+        .flash {
+            position: absolute;
+            inset: 0;
+            background: #e8544b;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 6;
+        }
+        .flash.go {
+            animation: flashHit 0.35s;
+        }
+        @keyframes flashHit {
+            0% {
+                opacity: 0.5;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+        .flash.gold {
+            background: #f2c14e;
+        }
+        .flash.gold.go {
+            animation: flashGold 0.4s;
+        }
+        @keyframes flashGold {
+            0% {
+                opacity: 0.5;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+
+        /* BATTLE TRANSITION */
+        .battle-transition {
+            position: absolute;
+            inset: 0;
+            z-index: 20;
+            pointer-events: none;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0);
+            transition: background 0.4s ease;
+        }
+        .battle-transition.active {
+            display: flex;
+            background: rgba(0, 0, 0, 0.85);
+            pointer-events: all;
+        }
+        .battle-transition .vs-text {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(36px, 10vw, 64px);
+            color: #f2c14e;
+            text-shadow: 0 0 40px rgba(242, 193, 78, 0.6), 0 0 80px rgba(242, 193, 78, 0.3), 4px 4px 0 #000;
+            animation: vsPulse 0.6s ease-in-out infinite alternate;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.5s cubic-bezier(.34, 1.56, .64, 1);
+        }
+        .battle-transition.active .vs-text {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .battle-transition .vs-sub {
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            color: #9fb0d0;
+            margin-top: 8px;
+            opacity: 0;
+            transition: opacity 0.6s ease 0.3s;
+        }
+        .battle-transition.active .vs-sub {
+            opacity: 1;
+        }
+        @keyframes vsPulse {
+            0% {
+                transform: scale(1);
+                text-shadow: 0 0 40px rgba(242, 193, 78, 0.6), 0 0 80px rgba(242, 193, 78, 0.3), 4px 4px 0 #000;
+            }
+            100% {
+                transform: scale(1.08);
+                text-shadow: 0 0 60px rgba(242, 193, 78, 0.8), 0 0 120px rgba(242, 193, 78, 0.4), 4px 4px 0 #000;
+            }
+        }
+        .battle-transition .enemy-name-display {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            color: #ff6b6b;
+            margin-top: 4px;
+            text-shadow: 2px 2px 0 #000;
+            opacity: 0;
+            transition: opacity 0.6s ease 0.4s;
+        }
+        .battle-transition.active .enemy-name-display {
+            opacity: 1;
+        }
+
+        .vignette {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 5;
+            box-shadow: inset 0 0 60px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .dmg-float {
+            position: absolute;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 16px;
+            pointer-events: none;
+            z-index: 6;
+            animation: floatUp 0.9s ease-out forwards;
+        }
+        .dmg-float.hit {
+            color: #f2c14e;
+            text-shadow: 2px 2px 0 #000, 0 0 12px rgba(242, 193, 78, 0.4);
+        }
+        .dmg-float.miss {
+            color: #9fb0d0;
+            text-shadow: 2px 2px 0 #000;
+        }
+        .dmg-float.critical {
+            color: #ff6b6b;
+            text-shadow: 2px 2px 0 #000, 0 0 20px rgba(255, 107, 107, 0.6);
+            font-size: 20px;
+        }
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-60px) scale(1.2);
+            }
+        }
+
+        .arena.boss-mode {
+            animation: bossAmbientShake 3.6s ease-in-out infinite;
+        }
+        .arena.boss-mode::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 4;
+            background: radial-gradient(circle at 50% 40%, transparent 40%, rgba(232, 84, 75, 0.25) 100%);
+            animation: bossVignettePulse 2.8s ease-in-out infinite;
+        }
+        @keyframes bossAmbientShake {
+            0%,
+            92%,
+            100% {
+                transform: translate(0, 0)
+            }
+            93% {
+                transform: translate(-4px, 3px)
+            }
+            95% {
+                transform: translate(4px, -3px)
+            }
+            97% {
+                transform: translate(-3px, 2px)
+            }
+        }
+        @keyframes bossVignettePulse {
+            0%,
+            100% {
+                opacity: 0.5
+            }
+            50% {
+                opacity: 1
+            }
+        }
+
+        /* CONSOLE */
+        .console {
+            display: flex;
+            flex-direction: column;
+            border-top: 3px solid #1f2d4a;
+            background: #0b0f1a;
+            flex-shrink: 0;
+        }
+        .dialogue {
+            padding: 8px 12px;
+            font-size: 15px;
+            line-height: 1.4;
+            color: #eaf2ff;
+            min-height: 48px;
+            border-bottom: 2px solid #1f2d4a;
+            background: #080c18;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .dialogue .speaker {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            color: #f2c14e;
+            margin-right: 6px;
+        }
+        .dialogue .text {
+            font-family: 'VT323', monospace;
+            font-size: 15px;
+        }
+        .dialogue.glitching .text {
+            color: #e8544b;
+            text-shadow: 2px 0 #5be7d9, -2px 0 #e8544b;
+            animation: glitchText 0.08s steps(1) infinite;
+        }
+        @keyframes glitchText {
+            0%,
+            100% {
+                transform: translate(0)
+            }
+            50% {
+                transform: translate(-2px, 1px)
+            }
+        }
+        .commands {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            padding: 8px;
+        }
+        .cmd-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8.5px;
+            background: #0b0f1a;
+            color: #5be7d9;
+            border: 2px solid #1f2d4a;
+            padding: 10px 4px;
+            cursor: pointer;
+            line-height: 1.4;
+            transition: transform 0.2s cubic-bezier(.34, 1.56, .64, 1), background 0.15s, border-color 0.15s;
+            border-radius: 4px;
+            touch-action: manipulation;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            word-break: break-word;
+        }
+        .cmd-btn:hover {
+            background: #16233d;
+            color: #fff;
+            border-color: #5be7d9;
+            transform: translateY(-2px) scale(1.03);
+        }
+        .cmd-btn:active {
+            transform: translateY(1px) scale(0.94);
+        }
+        .cmd-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .cmd-btn.wide {
+            grid-column: 1 / -1;
+            background: #1a2a1c;
+            color: #f2c14e;
+            border-color: #3a5a2a;
+        }
+        .cmd-btn.wide:hover {
+            border-color: #f2c14e;
+            background: #223a24;
+        }
+
+        /* OVERLAYS */
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(6, 10, 20, 0.97);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            z-index: 50;
+            backdrop-filter: blur(6px);
+            touch-action: auto;
+        }
+        .overlay.show {
+            display: flex;
+            animation: overlayBounceIn 0.45s cubic-bezier(.34, 1.56, .64, 1);
+        }
+        @keyframes overlayBounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.8)
+            }
+            60% {
+                opacity: 1;
+                transform: scale(1.03)
+            }
+            100% {
+                transform: scale(1)
+            }
+        }
+        .overlay-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            color: #5be7d9;
+            margin-bottom: 8px;
+            text-align: center;
+            text-shadow: 0 0 12px rgba(91, 231, 217, 0.3);
+        }
+        svg#grid {
+            background: #0c1526;
+            border: 2px solid #1f2d4a;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 380px;
+            height: auto;
+            aspect-ratio: 1/1;
+            touch-action: none;
+        }
+        .gridline {
+            stroke: #1c2c4a;
+            stroke-width: 1.8;
+        }
+        .axisline {
+            stroke: #5be7d9;
+            stroke-width: 3.5;
+        }
+        .tick-label {
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            fill: #7f93bd;
+            font-weight: bold;
+        }
+        .creature-target {
+            cursor: pointer;
+            touch-action: none;
+        }
+        .creature-target:hover rect,
+        .creature-target:hover .body {
+            filter: brightness(1.5);
+        }
+        .creature-target .body {
+            transition: filter 0.15s;
+        }
+
+        .skill-select {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 6px 0 10px;
+        }
+        .skill-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 7px;
+            padding: 6px 10px;
+            border: 2px solid #1f2d4a;
+            background: #0b0f1a;
+            color: #9fb0d0;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+            touch-action: manipulation;
+        }
+        .skill-btn.active {
+            border-color: #f2c14e;
+            color: #f2c14e;
+            background: rgba(242, 193, 78, 0.1);
+            box-shadow: 0 0 20px rgba(242, 193, 78, 0.15);
+        }
+        .skill-btn:active {
+            transform: scale(0.94);
+        }
+
+        .typed-panel {
+            margin-top: 10px;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .typed-panel input {
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            background: #000;
+            color: #5be7d9;
+            border: 2px solid #1f2d4a;
+            padding: 6px 10px;
+            width: 120px;
+            text-align: center;
+            border-radius: 4px;
+            min-height: 40px;
+        }
+        .typed-panel button {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            background: #f2c14e;
+            border: none;
+            padding: 10px 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            min-height: 40px;
+            touch-action: manipulation;
+        }
+        .typed-panel button:active {
+            transform: scale(0.94);
+        }
+        .close-overlay {
+            margin-top: 12px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            background: transparent;
+            color: #7f93bd;
+            border: 2px solid #1f2d4a;
+            padding: 6px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            touch-action: manipulation;
+            min-height: 36px;
+        }
+        .close-overlay:active {
+            transform: scale(0.94);
+        }
+
+        #tutorOverlay .tutor-panel {
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            height: 260px;
+        }
+        #tutorOverlay .tutor-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        #tutorOverlay .tutor-avatar {
+            width: 26px;
+            height: 26px;
+            background: #f2c14e;
+            border: 2px solid #000;
+            border-radius: 50%;
+            box-shadow: 0 0 16px rgba(242, 193, 78, 0.3);
+        }
+        #tutorOverlay .tutor-log {
+            flex: 1;
+            overflow-y: auto;
+            background: #0c1526;
+            border: 2px solid #1f2d4a;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            border-radius: 4px;
+            min-height: 120px;
+            max-height: 180px;
+        }
+        #tutorOverlay .bubble {
+            max-width: 88%;
+            padding: 6px 9px;
+            font-size: 14px;
+            line-height: 1.3;
+            border: 2px solid #000;
+            border-radius: 4px;
+        }
+        #tutorOverlay .bubble.tutor {
+            align-self: flex-start;
+            background: #1a2a1c;
+            color: #d9f2c8;
+            border-color: #3a5a2a;
+        }
+        #tutorOverlay .bubble.player {
+            align-self: flex-end;
+            background: #0f2a3a;
+            color: #bfe8ff;
+            border-color: #1f2d4a;
+        }
+        #tutorOverlay .bubble.thinking {
+            align-self: flex-start;
+            background: #1a2a1c;
+            color: #9fb08a;
+            font-style: italic;
+            border-color: #3a5a2a;
+        }
+        #tutorOverlay .bubble .tag {
+            display: block;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 7px;
+            margin-bottom: 3px;
+            opacity: 0.7;
+        }
+        #tutorOverlay .tutor-input-row {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        #tutorOverlay .tutor-input-row input {
+            flex: 1;
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            background: #000;
+            color: #eaf2ff;
+            border: 2px solid #1f2d4a;
+            padding: 6px 10px;
+            border-radius: 4px;
+            min-height: 36px;
+        }
+        #tutorOverlay .tutor-input-row button {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            background: #f2c14e;
+            border: none;
+            padding: 0 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            min-height: 36px;
+            touch-action: manipulation;
+        }
+        #tutorOverlay .tutor-input-row button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #dodgeOverlay .dodge-box {
+            position: relative;
+            width: 280px;
+            max-width: 85vw;
+            aspect-ratio: 280/170;
+            background: #050810;
+            border: 3px solid #e8544b;
+            box-shadow: 0 0 30px rgba(232, 84, 75, 0.4) inset, 0 0 20px rgba(232, 84, 75, 0.3);
+            overflow: hidden;
+            touch-action: none;
+            border-radius: 4px;
+        }
+        #dodgeOverlay .dodge-box .dodge-player {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: #5be7d9;
+            border: 2px solid #fff;
+            box-shadow: 0 0 12px #5be7d9;
+            border-radius: 50%;
+            pointer-events: none;
+            touch-action: none;
+        }
+        #dodgeOverlay .dodge-box .dodge-player.invuln {
+            animation: dodgeFlicker 0.1s steps(1) infinite;
+        }
+        @keyframes dodgeFlicker {
+            0%,
+            100% {
+                opacity: 1
+            }
+            50% {
+                opacity: 0.2
+            }
+        }
+        #dodgeOverlay .dodge-box .dodge-bolt {
+            position: absolute;
+            background: #e8544b;
+            box-shadow: 0 0 8px #e8544b;
+            border-radius: 2px;
+            pointer-events: none;
+        }
+        #dodgeOverlay .dodge-timer {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 22px;
+            color: #f2c14e;
+            margin-top: 8px;
+            text-shadow: 0 0 16px rgba(242, 193, 78, 0.5);
+        }
+        #dodgeOverlay .dodge-hint {
+            font-size: 13px;
+            color: #9fb0d0;
+            margin-top: 4px;
+            text-align: center;
+        }
+
+        @media (max-width:480px) {
+            .intro-logo {
+                font-size: 18px;
+            }
+            .intro-card .lv-title {
+                font-size: 7px;
+            }
+            .intro-card .lv-desc {
+                font-size: 11px;
+            }
+            .intro-start {
+                font-size: 10px;
+                padding: 10px 20px;
+            }
+            .cmd-btn {
+                font-size: 7px;
+                padding: 6px 3px;
+                min-height: 36px;
+            }
+            .dialogue {
+                font-size: 13px;
+                padding: 6px 8px;
+                min-height: 40px;
+            }
+            .enemy-sprite {
+                width: 80px;
+                height: 80px;
+                right: 20px;
+                top: 30px;
+            }
+            .player-sprite {
+                width: 70px;
+                height: 70px;
+                left: 16px;
+                bottom: 16px;
+            }
+            .nameplate.enemy-plate {
+                top: 6px;
+                left: 6px;
+                min-width: 90px;
+                padding: 4px 6px;
+            }
+            .nameplate.player-plate {
+                bottom: 6px;
+                right: 6px;
+                min-width: 90px;
+                padding: 4px 6px;
+            }
+            .score-tag {
+                font-size: 7px;
+                padding: 2px 6px;
+            }
+            .lv-chip {
+                font-size: 6px;
+                padding: 2px 4px;
+            }
+            .topbar {
+                padding: 4px 6px;
+                min-height: 32px;
+            }
+            .commands {
+                padding: 4px;
+                gap: 3px;
+            }
+            #dodgeOverlay .dodge-box {
+                width: 240px;
+            }
+            #tutorOverlay .tutor-panel {
+                height: 200px;
+            }
+            #tutorOverlay .tutor-log {
+                min-height: 80px;
+                max-height: 120px;
+            }
+            #tutorOverlay .bubble {
+                font-size: 12px;
+                padding: 4px 7px;
+            }
+            .typed-panel input {
+                width: 90px;
+                font-size: 16px;
+            }
+            .typed-panel button {
+                font-size: 8px;
+                padding: 6px 10px;
+            }
+            svg#grid {
+                max-width: 300px;
+            }
+            .overlay-title {
+                font-size: 8px;
+            }
+            .close-overlay {
+                font-size: 7px;
+                padding: 4px 10px;
+                min-height: 30px;
+            }
+            .dmg-float {
+                font-size: 13px;
+            }
+            .skill-btn {
+                font-size: 6px;
+                padding: 4px 8px;
+            }
+            .tick-label {
+                font-size: 14px;
+            }
+            .adventure-hud .quest {
+                font-size: 6px;
+                max-width: 140px;
+                padding: 3px 6px;
+            }
+            .interact-hint {
+                font-size: 6px;
+                padding: 3px 8px;
+                bottom: 50px;
+            }
+            .battle-transition .vs-text {
+                font-size: 28px;
+            }
+            .inventory-hud {
+                min-width: 60px;
+                font-size: 5px;
+                padding: 3px 6px;
+            }
+            .inventory-hud .inv-item {
+                font-size: 5px;
+            }
+            .save-btn {
+                font-size: 5px;
+                padding: 2px 6px;
+            }
+        }
+        @media (max-width:380px) {
+            .intro-levels {
+                grid-template-columns: 1fr 1fr;
+                gap: 4px;
+            }
+            .intro-card {
+                padding: 5px 6px;
+            }
+            .intro-card .lv-desc {
+                font-size: 10px;
+            }
+            .intro-card .lv-title {
+                font-size: 6px;
+            }
+            .enemy-sprite {
+                width: 64px;
+                height: 64px;
+                right: 12px;
+                top: 24px;
+            }
+            .player-sprite {
+                width: 56px;
+                height: 56px;
+                left: 10px;
+                bottom: 12px;
+            }
+            .nameplate {
+                min-width: 70px;
+                padding: 3px 5px;
+            }
+            .nameplate .name {
+                font-size: 7px;
+            }
+            .nameplate .row {
+                font-size: 9px;
+            }
+            .hpbar {
+                height: 5px;
+                gap: 1px;
+            }
+            .dialogue {
+                font-size: 12px;
+                min-height: 36px;
+                padding: 6px 8px;
+            }
+            .cmd-btn {
+                font-size: 6px;
+                padding: 4px 2px;
+                min-height: 30px;
+            }
+            svg#grid {
+                max-width: 260px;
+            }
+            .tick-label {
+                font-size: 12px;
+            }
+            .battle-transition .vs-text {
+                font-size: 22px;
+            }
+        }
+        @media (orientation:landscape) and (max-height:500px) {
+            .device {
+                max-height: 100vh;
+                border-radius: 8px;
+            }
+            .arena {
+                min-height: 140px;
+            }
+            .enemy-sprite {
+                width: 70px;
+                height: 70px;
+                top: 20px;
+                right: 20px;
+            }
+            .player-sprite {
+                width: 60px;
+                height: 60px;
+                bottom: 12px;
+                left: 14px;
+            }
+            .dialogue {
+                min-height: 32px;
+                font-size: 13px;
+                padding: 4px 8px;
+            }
+            .commands {
+                padding: 4px;
+                gap: 3px;
+            }
+            .cmd-btn {
+                font-size: 6px;
+                padding: 4px 2px;
+                min-height: 28px;
+            }
+            .topbar {
+                min-height: 28px;
+                padding: 2px 6px;
+            }
+            .nameplate {
+                min-width: 70px;
+                padding: 3px 5px;
+            }
+            .nameplate .name {
+                font-size: 7px;
+            }
+            .nameplate .row {
+                font-size: 9px;
+            }
+            .hpbar {
+                height: 5px;
+            }
+            svg#grid {
+                max-width: 280px;
+            }
+            .tick-label {
+                font-size: 14px;
+            }
+            .battle-transition .vs-text {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="device">
+
+        <!-- SPLASH -->
+        <div class="splash-screen" id="splashScreen">
+            <div class="splash-content">
+                <div class="splash-logo">COORDINATE<br />BATTLE</div>
+                <div class="splash-sub">The Lost Grid · Chapter I</div>
+                <div class="splash-version">v4.0 · Story & Inventory</div>
+                <div class="splash-hint">— tap anywhere to skip —</div>
+            </div>
+        </div>
+
+        <!-- LOADING -->
+        <div class="loading-screen" id="loadingScreen">
+            <div class="loading-bg-grid"></div>
+            <div class="loading-rings"><div class="loading-ring"></div><div class="loading-ring"></div><div class="loading-ring"></div><div class="loading-ring"></div></div>
+            <div class="loading-particles" id="loadingParticles"></div>
+            <div class="loading-content">
+                <div class="loading-logo">COORDINATE<br />BATTLE</div>
+                <div class="loading-sub">LOADING THE GRID …</div>
+                <div class="loading-gauge"><div class="loading-gauge-inner"></div></div>
+                <div class="loading-percent">LOADING <span id="percentText">0%</span></div>
+                <div class="loading-status">▶ STORY GENERATING</div>
+                <div class="loading-version">v4.0 · Story & Inventory</div>
+            </div>
+        </div>
+
+        <!-- INTRO -->
+        <div class="intro" id="introScreen">
+            <div class="intro-grid"></div>
+            <div class="intro-stars" id="introStars"></div>
+            <div class="intro-content">
+                <div class="intro-logo">COORDINATE<br />BATTLE</div>
+                <div class="intro-sub">The Lost Grid · Chapter I</div>
+                <div class="intro-mode">
+                    <button class="intro-mode-btn active" data-mode="adventure" id="modeAdventure">📜 STORY</button>
+                    <button class="intro-mode-btn" data-mode="battle" id="modeBattle">⚔ BATTLE</button>
+                </div>
+                <div class="intro-panel-title">CHOOSE YOUR DIFFICULTY</div>
+                <div class="intro-levels" id="introLevels"></div>
+                <button class="intro-start" id="introStartBtn">▶ START ADVENTURE</button>
+                <div class="intro-hint">A story-driven journey through the Lost Grid awaits.</div>
+            </div>
+        </div>
+
+        <!-- TOP BAR -->
+        <div class="topbar">
+            <div class="levels" id="levelSelect"></div>
+            <div class="topbar-right">
+                <button class="save-btn" id="saveBtn">💾 SAVE</button>
+                <div class="score-tag">SCORE <span id="score">0</span></div>
+            </div>
+        </div>
+
+        <!-- ARENA -->
+        <div class="arena" id="arena">
+            <canvas id="mapCanvas" width="600" height="450"></canvas>
+
+            <canvas class="sprite-canvas enemy-sprite" id="enemyCanvas" width="256" height="256"></canvas>
+            <canvas class="sprite-canvas player-sprite" id="playerCanvas" width="256" height="256"></canvas>
+
+            <!-- BATTLE TRANSITION -->
+            <div class="battle-transition" id="battleTransition">
+                <div class="vs-text">⚔ VS ⚔</div>
+                <div class="enemy-name-display" id="transitionEnemyName">???</div>
+                <div class="vs-sub">— prepare for battle —</div>
+            </div>
+
+            <div class="nameplate enemy-plate">
+                <div class="row"><span class="name enemy-name" id="enemyName">???</span><span id="enemyLv">Lv1</span></div>
+                <div class="hpbar" id="enemyHpBar"></div>
+                <div class="hp-label">HP</div>
+            </div>
+            <div class="nameplate player-plate">
+                <div class="row"><span class="name">TRAINER</span><span id="roundTag">R1/8</span></div>
+                <div class="hpbar" id="playerHpBar"></div>
+                <div class="hp-label">HP</div>
+            </div>
+
+            <!-- INVENTORY HUD -->
+            <div class="inventory-hud" id="inventoryHud">
+                <div class="inv-title">📦 INVENTORY</div>
+                <div id="inventoryList"></div>
+            </div>
+
+            <div class="adventure-hud" id="adventureHud">
+                <div class="quest" id="questDisplay">📜 <span id="questText">Explore the Lost Grid</span></div>
+                <div class="story-chapter" id="chapterDisplay">📖 <span id="chapterText">Prologue</span></div>
+                <div class="coords" id="coordDisplay">📍 <span id="coordText">0, 0</span></div>
+            </div>
+            <div class="interact-hint" id="interactHint">[E] TALK</div>
+            <div class="adventure-controls">WASD / Arrow Keys · move &nbsp;|&nbsp; E · interact &nbsp;|&nbsp; I · inventory</div>
+
+            <div class="flash" id="flash"></div>
+            <div class="vignette"></div>
+
+            <!-- OVERLAYS -->
+            <div class="overlay" id="overlay">
+                <div class="overlay-title" id="overlayTitle">⚔ CHOOSE SKILL & TARGET</div>
+                <div class="skill-select" id="skillSelect"></div>
+                <svg id="grid" viewBox="0 0 400 400" width="340" height="340"></svg>
+                <div class="typed-panel" id="typedPanel" style="display:none;">
+                    <input id="typedInput" type="text" placeholder="x,y" inputmode="decimal" autocomplete="off" />
+                    <button id="submitTyped">ATTACK</button>
+                </div>
+                <button class="close-overlay" id="closeOverlay">‹ BACK</button>
+            </div>
+
+            <div class="overlay" id="inventoryOverlay">
+                <div class="overlay-title">📦 INVENTORY</div>
+                <div id="inventoryFullList" style="width:100%;max-width:380px;background:#0c1526;border:2px solid #1f2d4a;border-radius:4px;padding:12px;min-height:120px;font-family:'VT323',monospace;font-size:16px;color:#eaf2ff;"></div>
+                <div style="margin-top:8px;font-size:12px;color:#6d7ea3;">Use items during battle from the skill menu.</div>
+                <button class="close-overlay" id="closeInventoryOverlay">‹ BACK</button>
+            </div>
+
+            <div class="overlay" id="tutorOverlay">
+                <div class="overlay-title">PROF. AXIS — COORDINATE TUTOR</div>
+                <div class="tutor-panel">
+                    <div class="tutor-header"><div class="tutor-avatar"></div><span style="font-size:13px;color:#9fb0d0;">Ask about quadrants, ordered pairs, or your target.</span></div>
+                    <div class="tutor-log" id="tutorLog"></div>
+                    <div class="tutor-input-row">
+                        <input id="tutorInput" type="text" placeholder="Type your question…" autocomplete="off" />
+                        <button id="tutorSend">SEND</button>
+                    </div>
+                </div>
+                <button class="close-overlay" id="closeTutorOverlay">‹ BACK</button>
+            </div>
+
+            <div class="overlay" id="dodgeOverlay">
+                <div class="overlay-title" id="dodgeTitle">SURVIVE THE ONSLAUGHT</div>
+                <div class="dodge-box" id="dodgeBox"><div class="dodge-player" id="dodgePlayer"></div></div>
+                <div class="dodge-timer" id="dodgeTimer">6</div>
+                <div class="dodge-hint">Arrow keys / drag to move — dodge the shards.</div>
+            </div>
+        </div>
+
+        <!-- CONSOLE -->
+        <div class="console">
+            <div class="dialogue" id="dialogue">
+                <span class="speaker">NARRATOR:</span>
+                <span class="text">The Lost Grid awaits. Begin your journey.</span>
+            </div>
+            <div class="commands">
+                <button class="cmd-btn wide" id="tutorBtn">🎓 ASK PROF. AXIS</button>
+                <button class="cmd-btn" id="attackBtn">⚔ ATTACK</button>
+                <button class="cmd-btn" id="hintBtn">✦ SCAN</button>
+                <button class="cmd-btn" id="nextBtn" disabled>➤ NEXT</button>
+                <button class="cmd-btn" id="restartBtn">↻ RESTART</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ── SPLASH ──
+            const splashScreen = document.getElementById('splashScreen');
+
+            function hideSplash() {
+                if (!splashScreen) return;
+                splashScreen.classList.add('hide');
+                setTimeout(() => { if (splashScreen.parentNode) splashScreen.style.display = 'none'; }, 800);
+            }
+            setTimeout(hideSplash, 8000);
+            document.addEventListener('click', hideSplash);
+            document.addEventListener('keydown', hideSplash);
+            document.addEventListener('touchstart', hideSplash);
+
+            // ── LOADING ──
+            const percentSpan = document.getElementById('percentText');
+            let p = 0;
+            const interval = setInterval(() => { p += Math.floor(Math.random() * 4) + 1; if (p > 100) p = 100;
+                percentSpan.textContent = p + '%'; if (p >= 100) clearInterval(interval); }, 80);
+            const loadingParticles = document.getElementById('loadingParticles');
+            for (let i = 0; i < 40; i++) {
+                const p2 = document.createElement('div');
+                p2.className = 'loading-particle' + (i % 3 === 0 ? ' gold' : '') + (i % 5 === 0 ? ' red' : '');
+                p2.style.left = Math.random() * 100 + '%';
+                p2.style.top = (10 + Math.random() * 70) + '%';
+                const size = 2 + Math.random() * 5;
+                p2.style.width = size + 'px';
+                p2.style.height = size + 'px';
+                const dur = 3 + Math.random() * 4;
+                p2.style.animationDuration = dur + 's';
+                p2.style.animationDelay = (Math.random() * 3) + 's';
+                loadingParticles.appendChild(p2);
+            }
+
+            setTimeout(() => {
+                const ls = document.getElementById('loadingScreen');
+                ls.classList.add('hide');
+                setTimeout(() => { ls.style.display = 'none'; }, 900);
+                const introScreen = document.getElementById('introScreen');
+                introScreen.classList.add('show');
+                introScreen.classList.remove('hide');
+            }, 9000);
+
+            // ── LEVELS ──
+            const LEVELS = [
+                { id: 1, chip: 'LV.1 ROOKIE', title: 'Quadrant Rookie', desc: 'Quadrant I only · whole 0–10',
+                    range: { min: 0, max: 10 }, gridStep: 1, decimals: false, quadrantOnly: true, mode: 'tap',
+                    decoys: 3, minGap: 1 },
+                { id: 2, chip: 'LV.2 EXPLORER', title: 'Grid Explorer', desc: 'All quadrants · whole –10 to 10',
+                    range: { min: -10, max: 10 }, gridStep: 1, decimals: false, quadrantOnly: false, mode: 'tap',
+                    decoys: 4, minGap: 1 },
+                { id: 3, chip: 'LV.3 RANGER', title: 'World Map Ranger', desc: 'All quadrants · even –20 to 20',
+                    range: { min: -20, max: 20 }, gridStep: 2, decimals: false, quadrantOnly: false, mode: 'tap',
+                    decoys: 4, minGap: 2 },
+                { id: 4, chip: 'LV.4 PRECISION', title: 'Precision Scout', desc: 'Half-points · decimals like 3.5',
+                    range: { min: -10, max: 10 }, gridStep: 1, decimals: true, quadrantOnly: false, mode: 'tap',
+                    decoys: 3, minGap: 1.5 },
+                { id: 5, chip: 'LV.5 MASTER', title: 'Coordinate Master', desc: 'No tapping · type exact decimals',
+                    range: { min: -10, max: 10 }, gridStep: 1, decimals: true, quadrantOnly: false, mode: 'type',
+                    decoys: 0, minGap: 0 },
+            ];
+
+            // ── DOM refs ──
+            const arena = document.getElementById('arena');
+            const dialogue = document.getElementById('dialogue');
+            const scoreEl = document.getElementById('score');
+            const roundTag = document.getElementById('roundTag');
+            const enemyName = document.getElementById('enemyName');
+            const enemyLv = document.getElementById('enemyLv');
+            const enemyHpBar = document.getElementById('enemyHpBar');
+            const playerHpBar = document.getElementById('playerHpBar');
+            const enemyPlate = document.querySelector('.enemy-plate');
+            const playerPlate = document.querySelector('.player-plate');
+            const flash = document.getElementById('flash');
+            const overlay = document.getElementById('overlay');
+            const overlayTitle = document.getElementById('overlayTitle');
+            const svg = document.getElementById('grid');
+            const typedPanel = document.getElementById('typedPanel');
+            const typedInput = document.getElementById('typedInput');
+            const attackBtn = document.getElementById('attackBtn');
+            const hintBtn = document.getElementById('hintBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const restartBtn = document.getElementById('restartBtn');
+            const closeOverlay = document.getElementById('closeOverlay');
+            const levelSelect = document.getElementById('levelSelect');
+            const tutorBtn = document.getElementById('tutorBtn');
+            const tutorOverlay = document.getElementById('tutorOverlay');
+            const closeTutorOverlay = document.getElementById('closeTutorOverlay');
+            const tutorLog = document.getElementById('tutorLog');
+            const tutorInput = document.getElementById('tutorInput');
+            const tutorSend = document.getElementById('tutorSend');
+            const dodgeOverlay = document.getElementById('dodgeOverlay');
+            const dodgeTitle = document.getElementById('dodgeTitle');
+            const dodgeBox = document.getElementById('dodgeBox');
+            const dodgePlayer = document.getElementById('dodgePlayer');
+            const dodgeTimer = document.getElementById('dodgeTimer');
+            const introLevels = document.getElementById('introLevels');
+            const introStartBtn = document.getElementById('introStartBtn');
+            const introStars = document.getElementById('introStars');
+            const enemyCanvas = document.getElementById('enemyCanvas');
+            const playerCanvas = document.getElementById('playerCanvas');
+            const submitTyped = document.getElementById('submitTyped');
+            const skillSelect = document.getElementById('skillSelect');
+            const mapCanvas = document.getElementById('mapCanvas');
+            const questText = document.getElementById('questText');
+            const chapterText = document.getElementById('chapterText');
+            const coordText = document.getElementById('coordText');
+            const interactHint = document.getElementById('interactHint');
+            const battleTransition = document.getElementById('battleTransition');
+            const transitionEnemyName = document.getElementById('transitionEnemyName');
+            const inventoryHud = document.getElementById('inventoryHud');
+            const inventoryList = document.getElementById('inventoryList');
+            const inventoryOverlay = document.getElementById('inventoryOverlay');
+            const inventoryFullList = document.getElementById('inventoryFullList');
+            const closeInventoryOverlay = document.getElementById('closeInventoryOverlay');
+            const saveBtn = document.getElementById('saveBtn');
+            const modeAdventure = document.getElementById('modeAdventure');
+            const modeBattle = document.getElementById('modeBattle');
+
+            // ── constants ──
+            const RES = 256;
+            const SCALE = RES / 20;
+            const ENEMY_HP_SEGMENTS = 4;
+            const BOSS_HP_SEGMENTS = 7;
+            const PLAYER_HP_SEGMENTS = 6;
+            const NORMAL_TYPE_COUNT = 6;
+            const totalRounds = 8;
+            const names = ['SPARKITT', 'BUBBLUB', 'LEAFLING', 'EMBERPUP', 'VOLTMEW', 'ROCKBOLD', 'WINDWING', 'GLIMMEW'];
+
+            // ── AUDIO ENGINE (chiptune) ──
+            let audioCtx = null;
+            let bgMusicInterval = null;
+            let bgMusicPlaying = false;
+            let audioInitialized = false;
+
+            function initAudio() {
+                if (audioInitialized) return;
+                try {
+                    audioCtx = new(window.AudioContext || window.webkitAudioContext)();
+                    if (audioCtx.state === 'suspended') {
+                        audioCtx.resume();
+                    }
+                    audioInitialized = true;
+                    startBgMusic();
+                } catch (e) { /* silent fail */ }
+            }
+
+            function playBeep(freq, duration, type = 'square', volume = 0.12) {
+                if (!audioCtx) return;
+                try {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = type;
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + duration);
+                } catch (e) { /* ignore */ }
+            }
+
+            function sfx(type) {
+                if (!audioCtx) return;
+                switch (type) {
+                    case 'spawn':
+                        playBeep(400, 0.2, 'square', 0.12);
+                        setTimeout(() => playBeep(600, 0.15, 'square', 0.10), 150);
+                        break;
+                    case 'attack':
+                        playBeep(800, 0.1, 'sawtooth', 0.15);
+                        setTimeout(() => playBeep(1200, 0.08, 'sawtooth', 0.10), 100);
+                        break;
+                    case 'hit':
+                        playBeep(300, 0.3, 'sawtooth', 0.20);
+                        playBeep(200, 0.2, 'square', 0.10);
+                        break;
+                    case 'walk':
+                        playBeep(1000, 0.04, 'square', 0.04);
+                        break;
+                    case 'ko':
+                        playBeep(500, 0.3, 'square', 0.15);
+                        setTimeout(() => playBeep(400, 0.3, 'square', 0.12), 200);
+                        setTimeout(() => playBeep(300, 0.5, 'square', 0.10), 400);
+                        break;
+                    case 'logo':
+                        playBeep(523, 0.2, 'square', 0.10);
+                        setTimeout(() => playBeep(659, 0.2, 'square', 0.10), 200);
+                        setTimeout(() => playBeep(784, 0.3, 'square', 0.12), 400);
+                        break;
+                    case 'item':
+                        playBeep(880, 0.1, 'square', 0.10);
+                        setTimeout(() => playBeep(1100, 0.15, 'square', 0.08), 120);
+                        break;
+                    case 'heal':
+                        playBeep(600, 0.2, 'sine', 0.10);
+                        setTimeout(() => playBeep(800, 0.25, 'sine', 0.08), 150);
+                        break;
+                    case 'victory':
+                        playBeep(523, 0.15, 'square', 0.10);
+                        setTimeout(() => playBeep(659, 0.15, 'square', 0.10), 150);
+                        setTimeout(() => playBeep(784, 0.2, 'square', 0.12), 300);
+                        break;
+                }
+            }
+
+            function startBgMusic() {
+                if (bgMusicPlaying) return;
+                bgMusicPlaying = true;
+                const notes = [523, 659, 784, 659, 523, 523, 784, 784, 659, 659, 523, 659];
+                let idx = 0;
+                bgMusicInterval = setInterval(() => {
+                    if (!bgMusicPlaying) return;
+                    const note = notes[idx % notes.length];
+                    playBeep(note, 0.10, 'square', 0.04);
+                    idx++;
+                    if (idx % 3 === 0) {
+                        playBeep(note * 1.25, 0.08, 'sawtooth', 0.02);
+                    }
+                }, 200);
+            }
+
+            function stopBgMusic() {
+                bgMusicPlaying = false;
+                if (bgMusicInterval) {
+                    clearInterval(bgMusicInterval);
+                    bgMusicInterval = null;
+                }
+            }
+
+            // ── STORY CHAPTERS ──
+            const STORY_CHAPTERS = [{
+                id: 0,
+                title: 'Prologue: The Lost Grid',
+                text: 'The Coordinate Grid has fallen into chaos. The Anomaly has shattered reality, scattering fragments across the Cartesian plane. You are the chosen Coordinate Master — the only one who can restore order.',
+                quest: 'Speak to Elder Oak in the village.'
+            }, {
+                id: 1,
+                title: 'Chapter 1: The Village',
+                text: 'You arrive at the village of Gridhaven. The elders speak of three corrupted creatures that guard the fragments. Defeat them to reveal the Anomaly\'s location.',
+                quest: 'Defeat the three corrupted creatures: Sparkitt, Bublub, and Leafling.'
+            }, {
+                id: 2,
+                title: 'Chapter 2: The Corrupted',
+                text: 'The creatures are twisted by the Anomaly\'s influence. Each one you defeat restores a piece of the Grid. Stay strong — the Anomaly grows more powerful with each fragment you recover.',
+                quest: 'Defeat all three creatures to find the Anomaly.'
+            }, {
+                id: 3,
+                title: 'Chapter 3: The Anomaly',
+                text: 'The Anomaly has revealed itself at the center of the Grid. It is the living embodiment of chaos — a creature of pure math gone wrong. This is your final test.',
+                quest: 'Defeat the Anomaly and restore the Grid!'
+            }, {
+                id: 4,
+                title: 'Epilogue: The Grid Restored',
+                text: 'You have defeated the Anomaly and restored the Coordinate Grid. The villagers celebrate your victory. You are now a true Coordinate Master!',
+                quest: '🏆 Adventure complete! You saved the Grid!'
+            }, ];
+
+            // ── SKILLS ──
+            const SKILLS = [
+                { id: 'precision', name: 'Precision', damage: 1, description: 'Accurate strike', color: '#5be7d9',
+                    emoji: '🎯' },
+                { id: 'power', name: 'Power Slash', damage: 2, description: 'Heavy blow (slightly less accurate)',
+                    color: '#f2c14e', emoji: '⚡' },
+                { id: 'fire', name: 'Fireball', damage: 3, description: 'High damage, low accuracy',
+                    color: '#e8544b', emoji: '🔥' },
+                { id: 'heal', name: 'Heal', damage: -1, description: 'Restore 1 HP', color: '#6fd67a',
+                emoji: '💚' },
+            ];
+
+            // ── ITEMS ──
+            const ITEMS = {
+                health_potion: { name: 'Health Potion', emoji: '🧪', desc: 'Restore 2 HP', use: 'heal', value: 2 },
+                antidote: { name: 'Antidote', emoji: '💊', desc: 'Cure poison (not implemented yet)', use: 'cure',
+                value: 0 },
+                key_fragment: { name: 'Key Fragment', emoji: '🗝️', desc: 'A fragment of the Grid Key', use: 'key',
+                    value: 0 },
+            };
+
+            // ── palettes ──
+            const palettes = [
+                { key: 'electric', name: 'Spark', body: '#ffd23f', shade: '#c99a1e', accent: '#f5b800',
+                    particle: '#fff59d' },
+                { key: 'water', name: 'Bubble', body: '#5ec8f2', shade: '#2c7ea6', accent: '#1a9bc4',
+                    particle: '#bfe8ff' },
+                { key: 'grass', name: 'Leaf', body: '#8bc34a', shade: '#4b7a1e', accent: '#6a9e2e',
+                    particle: '#d7f0b0' },
+                { key: 'fire', name: 'Ember', body: '#e57373', shade: '#a13c3c', accent: '#d64a4a',
+                    particle: '#ffcf9e' },
+                { key: 'rock', name: 'Boulder', body: '#a68a64', shade: '#6b5738', accent: '#8a7050',
+                    particle: '#e4d5b0' },
+                { key: 'wind', name: 'Gale', body: '#bfe6ea', shade: '#5fa3ab', accent: '#7bc8d4',
+                    particle: '#eafcff' },
+                { key: 'void', name: 'Anomaly', body: '#2c1a3d', shade: '#150c1f', accent: '#ff3b3b',
+                    particle: '#ff5c5c' },
+            ];
+            const BOSS_TYPE_INDEX = 6;
+
+            // ── Adventure Map ──
+            const MAP_TILES = { GRASS: 0, PATH: 1, TREE: 2, WATER: 3, STONE: 4, FLOWER: 5, GRASS2: 6, TOWN: 7, BRIDGE: 8 };
+            const MAP_W = 32,
+                MAP_H = 24;
+
+            function generateMap() {
+                const map = [];
+                for (let y = 0; y < MAP_H; y++) {
+                    const row = [];
+                    for (let x = 0; x < MAP_W; x++) {
+                        // Town center
+                        if (x >= 8 && x <= 14 && y >= 6 && y <= 10) { row.push(MAP_TILES.TOWN);
+                            continue; }
+                        // Bridge
+                        if (x >= 15 && x <= 18 && y === 8) { row.push(MAP_TILES.BRIDGE);
+                            continue; }
+                        if (x === 0 || x === MAP_W - 1 || y === 0 || y === MAP_H - 1) { row.push(MAP_TILES.TREE);
+                            continue; }
+                        if ((x < 5 && y < 5) || (x > MAP_W - 6 && y < 5) || (x < 5 && y > MAP_H - 6) || (x > MAP_W -
+                                6 && y > MAP_H - 6)) {
+                            row.push(MAP_TILES.WATER);
+                            continue;
+                        }
+                        if (x % 6 === 0 || y % 5 === 0) { row.push(MAP_TILES.PATH);
+                            continue; }
+                        if (Math.random() < 0.05) { row.push(MAP_TILES.TREE);
+                            continue; }
+                        if (Math.random() < 0.03) { row.push(MAP_TILES.STONE);
+                            continue; }
+                        if (Math.random() < 0.07) { row.push(MAP_TILES.FLOWER);
+                            continue; }
+                        row.push(Math.random() < 0.5 ? MAP_TILES.GRASS : MAP_TILES.GRASS2);
+                    }
+                    map.push(row);
+                }
+                return map;
+            }
+
+            let mapData = generateMap();
+
+            // ── NPCs with story integration ──
+            const NPCs = [{
+                id: 'elder',
+                x: 10,
+                y: 7,
+                name: 'Elder Oak',
+                color: '#f2c14e',
+                sprite: '🧙',
+                dialogue: [
+                    'Welcome, young Coordinate Master! The Grid is in peril.',
+                    'The Anomaly has corrupted three creatures: Sparkitt, Bublub, and Leafling.',
+                    'Defeat them, and the Anomaly will reveal itself at the center.',
+                    'I have a Health Potion to help you on your journey.'
+                ],
+                quest: 'Defeat the 3 corrupted creatures.',
+                trigger: 'start',
+                questState: 0,
+                emote: '✨',
+                givesItem: 'health_potion'
+            }, {
+                id: 'merchant',
+                x: 12,
+                y: 9,
+                name: 'Merchant Mina',
+                color: '#6fd67a',
+                sprite: '🧳',
+                dialogue: [
+                    'Ah, a traveler! I have rare items for sale.',
+                    'Defeat the corrupted creatures and I\'ll reward you with a Key Fragment.',
+                    'The Key Fragment will help you unlock the Anomaly\'s true power.'
+                ],
+                quest: 'Defeat all 3 creatures and return.',
+                trigger: 'merchant',
+                questState: 0,
+                emote: '💰',
+                givesItem: 'key_fragment'
+            }, {
+                id: 'enemy1',
+                x: 22,
+                y: 14,
+                name: 'Sparkitt',
+                color: '#ffd23f',
+                sprite: '⚡',
+                dialogue: [
+                    'Grrr! You\'ve entered my territory!',
+                    'I\'ve been corrupted by the Anomaly. Defeat me to restore the Grid!'
+                ],
+                quest: 'Defeat the Sparkitt!',
+                trigger: 'battle',
+                battleVariant: 0,
+                battleName: 'SPARKITT',
+                emote: '⚡',
+                questState: 0,
+                dropsItem: 'health_potion'
+            }, {
+                id: 'enemy2',
+                x: 4,
+                y: 14,
+                name: 'Bublub',
+                color: '#5ec8f2',
+                sprite: '💧',
+                dialogue: [
+                    'Bubble bubble! I guard the northern fragment!',
+                    'The Anomaly\'s corruption runs deep. Fight me!'
+                ],
+                quest: 'Defeat the Bublub!',
+                trigger: 'battle',
+                battleVariant: 1,
+                battleName: 'BUBBLUB',
+                emote: '💧',
+                questState: 0,
+                dropsItem: 'health_potion'
+            }, {
+                id: 'enemy3',
+                x: 26,
+                y: 4,
+                name: 'Leafling',
+                color: '#8bc34a',
+                sprite: '🌿',
+                dialogue: [
+                    'The forest protects the southern fragment!',
+                    'You must defeat me to proceed!'
+                ],
+                quest: 'Defeat the Leafling!',
+                trigger: 'battle',
+                battleVariant: 2,
+                battleName: 'LEAFLING',
+                emote: '🌿',
+                questState: 0,
+                dropsItem: 'health_potion'
+            }, {
+                id: 'guard',
+                x: 14,
+                y: 12,
+                name: 'Guard Garnet',
+                color: '#e8544b',
+                sprite: '🛡️',
+                dialogue: [
+                    'The Anomaly is a beast of pure math.',
+                    'You\'ll need the Key Fragment to unlock its true form.',
+                    'Defeat all three creatures, then find the Anomaly at the center.'
+                ],
+                quest: 'Find and defeat the Anomaly.',
+                trigger: 'guard',
+                questState: 0,
+                emote: '⚔️'
+            }, {
+                id: 'sage',
+                x: 8,
+                y: 16,
+                name: 'Sage Willow',
+                color: '#5be7d9',
+                sprite: '📜',
+                dialogue: [
+                    'The grid whispers secrets to those who listen.',
+                    'Each point (x,y) tells a story — x is horizontal, y is vertical.',
+                    'Use precision to defeat the Anomaly. Trust the coordinates!'
+                ],
+                quest: 'Learn coordinates from me.',
+                trigger: 'sage',
+                questState: 0,
+                emote: '🧠'
+            }, ];
+
+            // ── Adventure state ──
+            let advState = {
+                playerX: 10,
+                playerY: 8,
+                facing: 'down',
+                creaturesDefeated: 0,
+                inDialogue: false,
+                dialogueIndex: 0,
+                currentNpc: null,
+                map: mapData,
+                npcs: JSON.parse(JSON.stringify(NPCs)),
+                keys: { up: false, down: false, left: false, right: false },
+                moveCooldown: 0,
+                isMoving: false,
+                chapterIndex: 0,
+                inventory: { health_potion: 1, key_fragment: 0 },
+                storyFlag: false,
+                gameComplete: false,
+            };
+
+            // ── state ──
+            let levelIndex = 0;
+            let round = 1;
+            let score = 0;
+            let enemyHp = ENEMY_HP_SEGMENTS;
+            let enemyHpMax = ENEMY_HP_SEGMENTS;
+            let playerHp = PLAYER_HP_SEGMENTS;
+            let currentTarget = null;
+            let awaitingTypedAnswer = false;
+            let typeParticleTimer = null;
+            let tutorMessages = [];
+            let tutorBusy = false;
+            let adventureMode = true;
+            let battleInProgress = false;
+            let selectedSkill = null;
+
+            // ── utilities ──
+            function randInt(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+
+            function clamp(v, mn, mx) { return Math.max(mn, Math.min(mx, v)); }
+
+            function fmt(v, lvl) { return lvl.decimals ? v.toFixed(1) : String(v); }
+
+            function quadrantOf(x, y) { if (x > 0 && y > 0) return 'I'; if (x < 0 && y > 0) return 'II'; if (x < 0 && y < 0)
+                    return 'III'; return 'IV'; }
+
+            function shadeLighten(hex, amt = 40) { const n = parseInt(hex.slice(1), 16); const r = Math.min(255, ((n >>
+                        16) & 255) + amt); const g = Math.min(255, ((n >> 8) & 255) + amt); const b = Math.min(255, (n &
+                        255) + amt); return `rgb(${r},${g},${b})`; }
+
+            function curLevel() { return LEVELS[levelIndex]; }
+
+            // ── sprite drawing ──
+            function drawSprite(canvas, variant, palette) {
+                const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = false;
+                ctx.clearRect(0, 0, RES, RES);
+                const cx = RES / 2,
+                    cy = RES / 2 + 2 * SCALE;
+                const S = SCALE;
+                const shape = variant % 4;
+                for (let y = 0; y < RES; y++) {
+                    for (let x = 0; x < RES; x++) {
+                        const dx = x - cx,
+                            dy = y - cy;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        let on = false,
+                            isEye = false,
+                            isMouth = false,
+                            isEar = false;
+                        if (shape === 0) { on = dist < 8.2 * S;
+                            isEar = (Math.abs(dx) > 5 * S && Math.abs(dx) < 9.5 * S && dy < -3 * S && dy > -9 * S &&
+                                Math.abs(Math.abs(dx) - Math.abs(dy)) < 4.5 * S); if (isEar) on = true; } else if (
+                            shape === 1) on = dist < 7.8 * S;
+                        else if (shape === 2) on = Math.abs(dx) < 7.5 * S && Math.abs(dy) < 7 * S;
+                        else on = dy > -7.5 * S && dy < 7.5 * S && Math.abs(dx) < (7.5 * S - dy * 0.5);
+                        if (!on) continue;
+                        isEye = (dy > -3.5 * S && dy < -0.5 * S) && (Math.abs(Math.abs(dx) - 3.2 * S) < 1.4 * S);
+                        isMouth = (dy > 2.2 * S && dy < 4.2 * S && Math.abs(dx) < 2.2 * S);
+                        const rim = (dist > (shape === 0 ? 6.6 : shape === 1 ? 6.0 : 5.6) * S - S * 0.5) && !isEar;
+                        let color = palette.body;
+                        if (isEye) color = '#111';
+                        else if (isMouth) color = '#111';
+                        else if (rim) color = palette.shade;
+                        else if (dx < -2 * S && dy < -2 * S) color = shadeLighten(palette.body, 50);
+                        ctx.fillStyle = color;
+                        ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+                ctx.fillStyle = palette.shade;
+                ctx.fillRect(cx - 6.4 * S, cy + 6.8 * S, 2.6 * S, 3.6 * S);
+                ctx.fillRect(cx + 3.8 * S, cy + 6.8 * S, 2.6 * S, 3.6 * S);
+                ctx.fillStyle = palette.body;
+                ctx.fillRect(cx - 10.2 * S, cy - 1.8 * S, 2.4 * S, 2.8 * S);
+                ctx.fillRect(cx + 7.8 * S, cy - 1.8 * S, 2.4 * S, 2.8 * S);
+                ctx.fillStyle = palette.accent || palette.shade;
+                switch (palette.key) {
+                    case 'electric':
+                        ctx.fillRect(cx - 3.8 * S, cy - 12 * S, 1.6 * S, 3.8 * S);
+                        ctx.fillRect(cx + 2.2 * S, cy - 12.6 * S, 1.6 * S, 4 * S);
+                        ctx.fillStyle = '#fff2a8';
+                        for (let i = 0; i < 3; i++) ctx.fillRect(cx + 8.4 * S + i * 1.2 * S, cy + 1.6 * S + i * 1.8 *
+                            S, 2.2 * S, 1.2 * S);
+                        break;
+                    case 'water':
+                        ctx.fillRect(cx + 8 * S, cy - 2.8 * S, 3.8 * S, 2.4 * S);
+                        ctx.fillRect(cx + 9 * S, cy - 4.6 * S, 2.4 * S, 2 * S);
+                        break;
+                    case 'grass':
+                        ctx.fillRect(cx - 1.4 * S, cy - 11.6 * S, 2.8 * S, 4.4 * S);
+                        ctx.fillStyle = shadeLighten(palette.body, 50);
+                        ctx.fillRect(cx - 3.6 * S, cy - 12.8 * S, 2.8 * S, 2.4 * S);
+                        ctx.fillRect(cx + 0.8 * S, cy - 12.8 * S, 2.8 * S, 2.4 * S);
+                        break;
+                    case 'fire':
+                        ctx.fillStyle = '#ffd27a';
+                        ctx.fillRect(cx - 1.8 * S, cy - 10.2 * S, 2.2 * S, 3 * S);
+                        ctx.fillRect(cx - 0.6 * S, cy - 12.4 * S, 1.8 * S, 2.6 * S);
+                        ctx.fillRect(cx - 3.2 * S, cy - 8.6 * S, 1.2 * S, 1.6 * S);
+                        ctx.fillRect(cx + 2 * S, cy - 8.6 * S, 1.2 * S, 1.6 * S);
+                        break;
+                    case 'rock':
+                        ctx.fillStyle = palette.shade;
+                        ctx.fillRect(cx - 2.8 * S, cy - 9.4 * S, 2.2 * S, 2.6 * S);
+                        ctx.fillRect(cx + 0.6 * S, cy - 10.2 * S, 2.2 * S, 2.8 * S);
+                        ctx.fillRect(cx - 7.2 * S, cy + 0.2 * S, 2.4 * S, 1.6 * S);
+                        ctx.fillRect(cx + 4.8 * S, cy + 0.2 * S, 2.4 * S, 1.6 * S);
+                        break;
+                    case 'wind':
+                        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+                        ctx.fillRect(cx - 11.6 * S, cy - 3.4 * S, 3.4 * S, 2.8 * S);
+                        ctx.fillRect(cx - 10.6 * S, cy - 0.8 * S, 3 * S, 2.2 * S);
+                        ctx.fillRect(cx + 8.2 * S, cy - 3.4 * S, 3.4 * S, 2.8 * S);
+                        ctx.fillRect(cx + 7.6 * S, cy - 0.8 * S, 3 * S, 2.2 * S);
+                        break;
+                    case 'void':
+                        ctx.fillStyle = '#0a0510';
+                        ctx.fillRect(cx - 5.2 * S, cy - 2.8 * S, 10.4 * S, 3.4 * S);
+                        ctx.fillStyle = palette.accent;
+                        ctx.fillRect(cx - 3.4 * S, cy - 1.8 * S, 2.6 * S, 2 * S);
+                        ctx.fillRect(cx + 0.8 * S, cy - 1.8 * S, 2.6 * S, 2 * S);
+                        for (let i = 0; i < 4; i++) ctx.fillRect(cx - 6 * S + i * 3.8 * S, cy + 1.4 * S + (i % 2) *
+                            2.4 * S, 1.2 * S, 3.6 * S);
+                        ctx.fillStyle = palette.shade;
+                        ctx.fillRect(cx - 7.2 * S, cy - 10.6 * S, 1.8 * S, 4 * S);
+                        ctx.fillRect(cx + 5.4 * S, cy - 10.6 * S, 1.8 * S, 4 * S);
+                        break;
+                }
+                if (variant % 2 === 0) {
+                    ctx.fillStyle = shadeLighten(palette.shade, 30);
+                    ctx.fillRect(cx - 5 * S, cy + 4.4 * S, 10 * S, 1.2 * S);
+                    ctx.fillRect(cx - 4.2 * S, cy + 5.6 * S, 1.6 * S, 1.6 * S);
+                    ctx.fillRect(cx + 2.6 * S, cy + 5.6 * S, 1.6 * S, 1.6 * S);
+                }
+            }
+
+            function drawPlayerSprite(canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = false;
+                ctx.clearRect(0, 0, RES, RES);
+                const S = SCALE;
+                const ox = 10 * S,
+                    oy = 11 * S;
+                ctx.fillStyle = '#7a4a2a';
+                ctx.fillRect(ox - 8 * S, oy + 0.2 * S, 3.6 * S, 6.8 * S);
+                ctx.fillStyle = '#5c3620';
+                ctx.fillRect(ox - 8 * S, oy + 2.4 * S, 3.6 * S, 1.6 * S);
+                ctx.fillRect(ox - 8 * S, oy + 4.8 * S, 3.6 * S, 1.2 * S);
+                ctx.fillStyle = '#26364f';
+                ctx.fillRect(ox - 4.8 * S, oy + 9 * S, 3.8 * S, 6 * S);
+                ctx.fillRect(ox + 1 * S, oy + 9 * S, 3.8 * S, 6 * S);
+                ctx.fillStyle = '#1a1a1a';
+                ctx.fillRect(ox - 5.2 * S, oy + 14.4 * S, 4.4 * S, 2.4 * S);
+                ctx.fillRect(ox + 0.8 * S, oy + 14.4 * S, 4.4 * S, 2.4 * S);
+                ctx.fillStyle = '#3a6ea5';
+                ctx.fillRect(ox - 8 * S, oy + 1.2 * S, 2.8 * S, 5.6 * S);
+                ctx.fillRect(ox + 5.2 * S, oy + 1.2 * S, 2.8 * S, 5.6 * S);
+                ctx.fillStyle = '#f2c9a0';
+                ctx.fillRect(ox - 7.8 * S, oy + 6 * S, 2.4 * S, 2.4 * S);
+                ctx.fillRect(ox + 5.4 * S, oy + 6 * S, 2.4 * S, 2.4 * S);
+                for (let y = 0; y < RES; y++) {
+                    for (let x = 0; x < RES; x++) {
+                        const dx = x - ox,
+                            dy = y - oy;
+                        let color = null;
+                        if (dy >= -9 * S && dy <= -4.8 * S && Math.abs(dx) <= 5.6 * S) color = '#e8544b';
+                        else if (dy > -4.8 * S && dy <= -3.4 * S && Math.abs(dx) <= 6 * S) color = '#8a5a34';
+                        else if (dy > -3.4 * S && dy <= 1.2 * S && Math.abs(dx) <= 5 * S) color = '#f2c9a0';
+                        else if (dy > 1.2 * S && dy <= 8.8 * S && Math.abs(dx) <= 6 * S) color = '#3a6ea5';
+                        else if (dy > -1.8 * S && dy <= 0.4 * S && Math.abs(Math.abs(dx) - 2.2 * S) < 1.2 * S) color =
+                            '#111';
+                        else if (dy > 2.8 * S && dy < 3.8 * S && Math.abs(dx) < 1.8 * S) color = '#7a3a2a';
+                        if (color) { ctx.fillStyle = color;
+                            ctx.fillRect(x, y, 1, 1); }
+                    }
+                }
+                ctx.fillStyle = '#2c557f';
+                ctx.fillRect(ox - 0.8 * S, oy + 1.6 * S, 1.6 * S, 7 * S);
+                ctx.fillStyle = '#e8544b';
+                ctx.fillRect(ox - 4.8 * S, oy - 0.8 * S, 9.6 * S, 2 * S);
+                ctx.fillRect(ox - 5.6 * S, oy - 2.2 * S, 1.6 * S, 2.4 * S);
+                ctx.fillRect(ox + 4 * S, oy - 2.2 * S, 1.6 * S, 2.4 * S);
+            }
+
+            // ── HP bar ──
+            function renderHpBar(container, total, current, cls) {
+                container.innerHTML = '';
+                for (let i = 0; i < total; i++) {
+                    const seg = document.createElement('div');
+                    seg.className = 'seg' + (i < current ? ` on ${cls}` : '');
+                    container.appendChild(seg);
+                }
+            }
+
+            // ── coordinates ──
+            function randomCoord(lvl) {
+                const unit = lvl.decimals ? 0.5 : lvl.gridStep;
+                const { min, max } = lvl.range;
+                const steps = Math.round((max - min) / unit);
+
+                function pickAxis(positiveOnly) {
+                    let v, guard = 0;
+                    do { const n = randInt(0, steps);
+                        v = min + n * unit;
+                        guard++; } while ((Math.abs(v) < unit / 2 || (positiveOnly && v <= 0)) && guard < 80);
+                    return Math.round(v * 10) / 10;
+                }
+                const x = pickAxis(lvl.quadrantOnly);
+                const y = pickAxis(lvl.quadrantOnly);
+                return [x, y];
+            }
+
+            function toPixel(x, y, lvl) {
+                const pad = 34,
+                    span = lvl.range.max - lvl.range.min,
+                    usable = 400 - pad * 2;
+                const px = pad + (x - lvl.range.min) / span * usable;
+                const py = 400 - (pad + (y - lvl.range.min) / span * usable);
+                return [px, py];
+            }
+
+            function drawGrid(lvl) {
+                let html = '';
+                const pad = 34;
+                for (let v = lvl.range.min; v <= lvl.range.max; v += lvl.gridStep) {
+                    const [px] = toPixel(v, 0, lvl);
+                    const [, py] = toPixel(0, v, lvl);
+                    html += `<line x1="${px}" y1="${pad}" x2="${px}" y2="${400-pad}" class="gridline"/>`;
+                    html += `<line x1="${pad}" y1="${py}" x2="${400-pad}" y2="${py}" class="gridline"/>`;
+                }
+                const [zx] = toPixel(0, 0, lvl);
+                const [, zy] = toPixel(0, 0, lvl);
+                html += `<line x1="${pad}" y1="${zy}" x2="${400-pad}" y2="${zy}" class="axisline"/>`;
+                html += `<line x1="${zx}" y1="${pad}" x2="${zx}" y2="${400-pad}" class="axisline"/>`;
+                for (let v = lvl.range.min; v <= lvl.range.max; v += lvl.gridStep) {
+                    if (v === 0 && lvl.range.min < 0) continue;
+                    const [px] = toPixel(v, 0, lvl);
+                    html += `<text x="${px}" y="${zy+24}" class="tick-label" text-anchor="middle">${v}</text>`;
+                    const [, py] = toPixel(0, v, lvl);
+                    html += `<text x="${zx-16}" y="${py+6}" class="tick-label" text-anchor="end">${v}</text>`;
+                }
+                html += `<text x="${zx-16}" y="${zy+24}" class="tick-label" text-anchor="end">0</text>`;
+                svg.innerHTML = html;
+            }
+
+            function spawnDecoys(tx, ty, lvl) {
+                const coords = [
+                    [tx, ty]
+                ];
+                const need = lvl.decoys;
+                let guard = 0;
+                while (coords.length <= need && guard < 500) {
+                    guard++;
+                    const c = randomCoord(lvl);
+                    const tooClose = coords.some(([x, y]) => Math.abs(x - c[0]) < lvl.minGap && Math.abs(y - c[1]) <
+                        lvl.minGap);
+                    if (!tooClose) coords.push(c);
+                }
+                return coords;
+            }
+
+            function renderGridCreatures(coords, targetIndex, lvl) {
+                let html = svg.innerHTML;
+                coords.forEach(([x, y], i) => {
+                    const [px, py] = toPixel(x, y, lvl);
+                    const pal = palettes[i % palettes.length];
+                    const s = 30;
+                    html +=
+                        `<g class="creature-target" data-x="${x}" data-y="${y}" data-target="${i===targetIndex}" transform="translate(${px-s/2},${py-s/2})">
+                <rect class="body" width="${s}" height="${s}" fill="${pal.body}" stroke="${pal.shade}" stroke-width="2.5" rx="3"/>
+                <rect x="${s*0.28}" y="${s*0.30}" width="3.5" height="3.5" fill="#111" rx="1"/>
+                <rect x="${s*0.62}" y="${s*0.30}" width="3.5" height="3.5" fill="#111" rx="1"/>
+                ${i===targetIndex ? `<rect x="4" y="${s-10}" width="${s-8}" height="4" fill="#f2c14e" rx="1"/>` : ''}
+            </g>`;
+                });
+                svg.innerHTML = html;
+                svg.querySelectorAll('.creature-target').forEach(el => {
+                    el.addEventListener('click', () => handleGridGuess(el));
+                    el.addEventListener('touchend', (e) => { e.preventDefault();
+                        handleGridGuess(el); });
+                });
+            }
+
+            // ── Battle functions ──
+            function updateHud() {
+                scoreEl.textContent = score;
+                roundTag.textContent = battleInProgress ? `R${Math.min(round,totalRounds)}/${totalRounds}` : 'ADV';
+                renderHpBar(enemyHpBar, enemyHpMax, enemyHp, 'enemy');
+                renderHpBar(playerHpBar, PLAYER_HP_SEGMENTS, playerHp, 'player');
+                updateInventoryHud();
+            }
+
+            function updateInventoryHud() {
+                const items = advState.inventory;
+                const list = inventoryList;
+                list.innerHTML = '';
+                let hasItems = false;
+                for (const [key, count] of Object.entries(items)) {
+                    if (count > 0 && ITEMS[key]) {
+                        hasItems = true;
+                        const div = document.createElement('div');
+                        div.className = 'inv-item';
+                        div.innerHTML =
+                            `<span>${ITEMS[key].emoji} ${ITEMS[key].name}</span><span class="qty">×${count}</span>`;
+                        list.appendChild(div);
+                    }
+                }
+                if (!hasItems) {
+                    list.innerHTML = '<div style="color:#6d7ea3;font-size:6px;text-align:center;">Empty</div>';
+                }
+            }
+
+            function renderFullInventory() {
+                const items = advState.inventory;
+                let html = '';
+                let hasItems = false;
+                for (const [key, count] of Object.entries(items)) {
+                    if (count > 0 && ITEMS[key]) {
+                        hasItems = true;
+                        html +=
+                            `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1f2d4a;">
+                            <span>${ITEMS[key].emoji} ${ITEMS[key].name}</span>
+                            <span style="color:#5be7d9;">×${count}</span>
+                            <span style="color:#6d7ea3;font-size:12px;">${ITEMS[key].desc}</span>
+                        </div>`;
+                    }
+                }
+                if (!hasItems) {
+                    html = '<div style="color:#6d7ea3;text-align:center;padding:20px;">Your inventory is empty.</div>';
+                }
+                inventoryFullList.innerHTML = html;
+            }
+
+            function bounceSprite(el) {
+                el.classList.remove('spawn-in');
+                void el.offsetWidth;
+                el.classList.add('spawn-in');
+            }
+
+            function pulsePlate(el) {
+                el.classList.remove('pulse');
+                void el.offsetWidth;
+                el.classList.add('pulse');
+            }
+
+            function startTypeParticles(variant) {
+                if (typeParticleTimer) clearInterval(typeParticleTimer);
+                const type = palettes[variant % palettes.length];
+                typeParticleTimer = setInterval(() => {
+                    if (enemyHp <= 0) return;
+                    const p = document.createElement('div');
+                    p.className = 'particle';
+                    p.style.background = type.particle;
+                    p.style.width = (4 + Math.random() * 4) + 'px';
+                    p.style.height = p.style.width;
+                    p.style.right = (40 + Math.random() * 80) + 'px';
+                    p.style.bottom = (130 + Math.random() * 80) + 'px';
+                    p.style.left = 'auto';
+                    const dur = 1.8 + Math.random() * 1.4;
+                    p.style.animationDuration = dur + 's';
+                    p.style.animationName = 'floatParticle';
+                    p.style.boxShadow = `0 0 8px ${type.particle}`;
+                    arena.appendChild(p);
+                    setTimeout(() => p.remove(), dur * 1000 + 200);
+                }, 300);
+            }
+
+            function setDialogue(speaker, text, glitch = false) {
+                dialogue.innerHTML = `<span class="speaker">${speaker}:</span><span class="text">${text}</span>`;
+                if (glitch) dialogue.classList.add('glitching');
+                else dialogue.classList.remove('glitching');
+            }
+
+            // ── Show battle transition ──
+            function showBattleTransition(enemyNameText, callback) {
+                battleTransition.classList.add('active');
+                transitionEnemyName.textContent = enemyNameText || '???';
+                sfx('spawn');
+                flash.classList.remove('go');
+                void flash.offsetWidth;
+                flash.className = 'flash gold';
+                flash.classList.add('go');
+                setTimeout(() => flash.className = 'flash', 400);
+
+                setTimeout(() => {
+                    battleTransition.classList.remove('active');
+                    if (callback) callback();
+                }, 1800);
+            }
+
+            // ── Use item from inventory ──
+            function useItem(itemKey) {
+                if (!advState.inventory[itemKey] || advState.inventory[itemKey] <= 0) return false;
+                const item = ITEMS[itemKey];
+                if (!item) return false;
+
+                if (item.use === 'heal') {
+                    const healAmt = item.value || 2;
+                    playerHp = Math.min(playerHp + healAmt, PLAYER_HP_SEGMENTS);
+                    advState.inventory[itemKey]--;
+                    updateHud();
+                    sfx('heal');
+                    setDialogue('💚 ITEM', `Used ${item.name}! Restored ${healAmt} HP.`, false);
+                    pulsePlate(playerPlate);
+                    return true;
+                }
+                if (item.use === 'key') {
+                    if (advState.creaturesDefeated >= 3) {
+                        setDialogue('🗝️ KEY', 'The Key Fragment glows! The Anomaly\'s true form is revealed!', false);
+                        sfx('item');
+                        // Trigger boss reveal
+                        advState.storyFlag = true;
+                        return true;
+                    } else {
+                        setDialogue('🗝️ KEY', 'The Key Fragment hums... You need to defeat all 3 creatures first.',
+                        false);
+                        return false;
+                    }
+                }
+                return false;
+            }
+
+            function spawnEnemy() {
+                const lvl = curLevel();
+                const variant = round % NORMAL_TYPE_COUNT;
+                drawSprite(enemyCanvas, variant, palettes[variant]);
+                enemyCanvas.style.width = '120px';
+                enemyCanvas.style.height = '120px';
+                const name = names[round % names.length];
+                enemyName.textContent = name;
+                enemyLv.textContent = 'Lv' + round + ' · ' + palettes[variant].name;
+                enemyCanvas.classList.remove('faint');
+                enemyCanvas.style.opacity = '1';
+                arena.classList.remove('boss-mode');
+                enemyHpMax = ENEMY_HP_SEGMENTS;
+                enemyHp = enemyHpMax;
+                const [tx, ty] = randomCoord(lvl);
+                currentTarget = [tx, ty];
+                updateHud();
+                const q = lvl.quadrantOnly ? 'I' : quadrantOf(tx, ty);
+                setDialogue('⚔ ENEMY',
+                    `A wild ${name} appears at (${fmt(tx,lvl)}, ${fmt(ty,lvl)}) — Quadrant ${q}.`,
+                    false);
+                nextBtn.disabled = true;
+                attackBtn.disabled = false;
+                hintBtn.disabled = false;
+                startTypeParticles(variant);
+                bounceSprite(enemyCanvas);
+                battleInProgress = true;
+                arena.classList.remove('adventure-mode');
+                document.querySelector('.adventure-hud').style.display = 'none';
+                document.querySelector('.inventory-hud').style.display = 'none';
+                interactHint.style.display = 'none';
+                enemyCanvas.style.display = 'block';
+                playerCanvas.style.display = 'block';
+                enemyPlate.style.display = 'flex';
+                playerPlate.style.display = 'flex';
+                mapCanvas.style.display = 'none';
+                nextBtn.textContent = '➤ NEXT';
+            }
+
+            function spawnBoss() {
+                const lvl = curLevel();
+                drawSprite(enemyCanvas, BOSS_TYPE_INDEX, palettes[BOSS_TYPE_INDEX]);
+                enemyCanvas.style.width = '140px';
+                enemyCanvas.style.height = '140px';
+                enemyName.textContent = 'THE ANOMALY';
+                enemyLv.textContent = 'FINAL BOSS';
+                enemyCanvas.classList.remove('faint');
+                enemyCanvas.style.opacity = '1';
+                arena.classList.add('boss-mode');
+                enemyHpMax = BOSS_HP_SEGMENTS;
+                enemyHp = enemyHpMax;
+                const [tx, ty] = randomCoord(lvl);
+                currentTarget = [tx, ty];
+                updateHud();
+                setDialogue('⚠ BOSS', '★ THE ANOMALY BARS THE WAY ★ Survive its assault, then strike.', true);
+                nextBtn.disabled = true;
+                attackBtn.disabled = false;
+                hintBtn.disabled = false;
+                startTypeParticles(BOSS_TYPE_INDEX);
+                bounceSprite(enemyCanvas);
+                battleInProgress = true;
+                arena.classList.remove('adventure-mode');
+                document.querySelector('.adventure-hud').style.display = 'none';
+                document.querySelector('.inventory-hud').style.display = 'none';
+                interactHint.style.display = 'none';
+                enemyCanvas.style.display = 'block';
+                playerCanvas.style.display = 'block';
+                enemyPlate.style.display = 'flex';
+                playerPlate.style.display = 'flex';
+                mapCanvas.style.display = 'none';
+                nextBtn.textContent = '➤ NEXT';
+            }
+
+            function startAdventureBattle(npc) {
+                const variant = npc.battleVariant || 0;
+                const name = npc.battleName || npc.name;
+                const isBoss = npc.isBoss || false;
+
+                showBattleTransition(name, () => {
+                    const lvl = curLevel();
+                    drawSprite(enemyCanvas, variant, palettes[variant % palettes.length]);
+                    enemyCanvas.style.width = isBoss ? '140px' : '120px';
+                    enemyCanvas.style.height = isBoss ? '140px' : '120px';
+                    enemyName.textContent = name;
+                    enemyLv.textContent = isBoss ? 'FINAL BOSS' : 'WILD';
+                    enemyCanvas.classList.remove('faint');
+                    enemyCanvas.style.opacity = '1';
+                    if (isBoss) arena.classList.add('boss-mode');
+                    else arena.classList.remove('boss-mode');
+                    enemyHpMax = isBoss ? BOSS_HP_SEGMENTS : ENEMY_HP_SEGMENTS;
+                    enemyHp = enemyHpMax;
+                    const [tx, ty] = randomCoord(lvl);
+                    currentTarget = [tx, ty];
+                    updateHud();
+                    setDialogue('⚔ BATTLE', `A wild ${name} appears at (${fmt(tx,lvl)}, ${fmt(ty,lvl)})!`, false);
+                    battleInProgress = true;
+                    startTypeParticles(variant);
+                    bounceSprite(enemyCanvas);
+                    arena.classList.remove('adventure-mode');
+                    document.querySelector('.adventure-hud').style.display = 'none';
+                    document.querySelector('.inventory-hud').style.display = 'none';
+                    interactHint.style.display = 'none';
+                    enemyCanvas.style.display = 'block';
+                    playerCanvas.style.display = 'block';
+                    enemyPlate.style.display = 'flex';
+                    playerPlate.style.display = 'flex';
+                    mapCanvas.style.display = 'none';
+                    attackBtn.disabled = false;
+                    hintBtn.disabled = false;
+                    nextBtn.disabled = true;
+                    nextBtn.textContent = '➤ NEXT';
+                    sfx('attack');
+                });
+            }
+
+            function performAttack(skill) {
+                if (!currentTarget || enemyHp <= 0) return;
+
+                // Check if using heal item from inventory
+                if (skill.id === 'heal') {
+                    // Try to use a health potion from inventory first
+                    if (advState.inventory.health_potion && advState.inventory.health_potion > 0) {
+                        useItem('health_potion');
+                        return;
+                    }
+                    // Fallback to the heal skill
+                    const healAmt = 1;
+                    playerHp = Math.min(playerHp + healAmt, PLAYER_HP_SEGMENTS);
+                    updateHud();
+                    pulsePlate(playerPlate);
+                    sfx('heal');
+                    floatDamage(playerCanvas, '+' + healAmt + ' HP', false, '#6fd67a');
+                    setDialogue('💚 HEAL', 'You restore ' + healAmt + ' HP.', false);
+                    return;
+                }
+
+                const lvl = curLevel();
+                let damage = skill.damage;
+                let hit = true;
+                let critical = false;
+
+                const acc = skill.id === 'precision' ? 0.95 : skill.id === 'power' ? 0.75 : 0.55;
+                if (Math.random() > acc) { hit = false; }
+                if (hit && Math.random() < 0.15) { critical = true;
+                    damage = Math.floor(damage * 1.8); }
+
+                playerCanvas.classList.remove('dash');
+                void playerCanvas.offsetWidth;
+                playerCanvas.classList.add('dash');
+                enemyCanvas.classList.remove('recoil');
+                void enemyCanvas.offsetWidth;
+                enemyCanvas.classList.add('recoil');
+                setTimeout(() => { playerCanvas.classList.remove('dash');
+                    enemyCanvas.classList.remove('recoil'); }, 500);
+
+                if (!hit) {
+                    playerHp = Math.max(playerHp - 1, 0);
+                    updateHud();
+                    pulsePlate(playerPlate);
+                    flash.classList.remove('go');
+                    void flash.offsetWidth;
+                    flash.className = 'flash';
+                    flash.classList.add('go');
+                    floatDamage(playerCanvas, 'MISS', true);
+                    setDialogue('💨 MISS', 'Your attack missed! The enemy counterattacks!', false);
+                    if (playerHp <= 0) {
+                        setDialogue('💀 DEFEAT', 'You ran out of HP!', false);
+                        attackBtn.disabled = true;
+                        hintBtn.disabled = true;
+                        endBattle(false);
+                    }
+                    return;
+                }
+
+                enemyHp = Math.max(enemyHp - damage, 0);
+                score += damage * 5;
+                updateHud();
+                pulsePlate(enemyPlate);
+                const dmgText = critical ? '💥 ' + damage + '!' : '-' + damage;
+                floatDamage(enemyCanvas, dmgText, false, critical ? '#ff6b6b' : '#f2c14e');
+                flash.classList.remove('go');
+                void flash.offsetWidth;
+                flash.className = 'flash gold';
+                flash.classList.add('go');
+                setTimeout(() => flash.className = 'flash', 400);
+                sfx('hit');
+
+                const enemyNameText = enemyName.textContent;
+                setDialogue('⚔ ATTACK',
+                    `Dealt ${damage} damage to ${enemyNameText}${critical ? ' — CRITICAL!' : ''}!`, false);
+
+                if (enemyHp <= 0) {
+                    setTimeout(() => {
+                        const variant = (round % NORMAL_TYPE_COUNT);
+                        triggerKillEffect(variant);
+                        enemyCanvas.style.opacity = '0';
+                        arena.classList.remove('boss-mode');
+                        setDialogue('🏆 VICTORY', `${enemyNameText} defeated!`, false);
+                        sfx('victory');
+                        attackBtn.disabled = true;
+                        hintBtn.disabled = true;
+                        nextBtn.disabled = false;
+                        battleInProgress = false;
+                        if (adventureMode) {
+                            advState.creaturesDefeated++;
+                            // Drop item
+                            const npc = advState.npcs.find(n => n.battleName === enemyNameText);
+                            if (npc && npc.dropsItem) {
+                                const itemKey = npc.dropsItem;
+                                if (ITEMS[itemKey]) {
+                                    advState.inventory[itemKey] = (advState.inventory[itemKey] || 0) + 1;
+                                    setDialogue('📦 LOOT', `You found a ${ITEMS[itemKey].name}!`, false);
+                                    sfx('item');
+                                }
+                            }
+                            checkAdventureQuests();
+                            const npcIdx = advState.npcs.findIndex(n => n.battleName === enemyNameText);
+                            if (npcIdx >= 0) {
+                                advState.npcs.splice(npcIdx, 1);
+                            }
+                            updateChapter();
+                            questText.textContent = advState.creaturesDefeated >= 3 ?
+                                'The Anomaly has appeared! Find it at the center!' :
+                                `Defeat ${3 - advState.creaturesDefeated} more creatures.`;
+                        }
+                        updateHud();
+                    }, 400);
+                } else {
+                    setTimeout(() => {
+                        const counterDmg = Math.floor(Math.random() * 2) + 1;
+                        playerHp = Math.max(playerHp - counterDmg, 0);
+                        updateHud();
+                        pulsePlate(playerPlate);
+                        flash.classList.remove('go');
+                        void flash.offsetWidth;
+                        flash.className = 'flash';
+                        flash.classList.add('go');
+                        floatDamage(playerCanvas, '-' + counterDmg, false, '#e8544b');
+                        setDialogue('💢 COUNTER', `${enemyNameText} strikes back for ${counterDmg} damage!`,
+                        false);
+                        if (playerHp <= 0) {
+                            setDialogue('💀 DEFEAT', 'You have been defeated!', false);
+                            attackBtn.disabled = true;
+                            hintBtn.disabled = true;
+                            endBattle(false);
+                        }
+                    }, 500);
+                }
+            }
+
+            function endBattle(win) {
+                battleInProgress = false;
+                if (adventureMode) {
+                    if (!win) {
+                        playerHp = PLAYER_HP_SEGMENTS;
+                        updateHud();
+                        enterAdventureMode();
+                    } else {
+                        enterAdventureMode();
+                    }
+                } else {
+                    if (win) {
+                        nextBtn.disabled = false;
+                    } else {
+                        setDialogue('💀 DEFEAT', 'Game Over! Press RESTART.', false);
+                        attackBtn.disabled = true;
+                        hintBtn.disabled = true;
+                    }
+                }
+            }
+
+            function floatDamage(target, text, miss, color) {
+                const rect = target.getBoundingClientRect();
+                const arenaRect = arena.getBoundingClientRect();
+                const el = document.createElement('div');
+                el.className = 'dmg-float' + (miss ? ' miss' : '') + (color === '#ff6b6b' ? ' critical' : ' hit');
+                el.textContent = text;
+                if (color) el.style.color = color;
+                el.style.left = (rect.left - arenaRect.left + rect.width / 2 - 20) + 'px';
+                el.style.top = (rect.top - arenaRect.top - 10) + 'px';
+                arena.appendChild(el);
+                setTimeout(() => el.remove(), 1000);
+            }
+
+            function triggerKillEffect(variant) {
+                const rect = enemyCanvas.getBoundingClientRect();
+                const arenaRect = arena.getBoundingClientRect();
+                const cx = rect.left - arenaRect.left + rect.width / 2;
+                const cy = rect.top - arenaRect.top + rect.height / 2;
+                const pal = palettes[variant % palettes.length];
+                const burst = document.createElement('div');
+                burst.className = 'kill-flash';
+                burst.style.left = (cx - 60) + 'px';
+                burst.style.top = (cy - 60) + 'px';
+                burst.style.width = '120px';
+                burst.style.height = '120px';
+                arena.appendChild(burst);
+                setTimeout(() => burst.remove(), 650);
+                const colors = [pal.body, pal.shade, '#ffffff', '#f2c14e', pal.accent];
+                const shardCount = 28;
+                for (let i = 0; i < shardCount; i++) {
+                    const s = document.createElement('div');
+                    s.className = 'shard';
+                    const angle = (Math.PI * 2 / shardCount) * i + (Math.random() * 0.6 - 0.3);
+                    const dist = 40 + Math.random() * 60;
+                    const tx = Math.cos(angle) * dist,
+                        ty = Math.sin(angle) * dist;
+                    const size = 4 + Math.random() * 6;
+                    s.style.setProperty('--tx', tx.toFixed(1) + 'px');
+                    s.style.setProperty('--ty', ty.toFixed(1) + 'px');
+                    s.style.setProperty('--rot', Math.floor(Math.random() * 360) + 'deg');
+                    s.style.left = (cx - size / 2) + 'px';
+                    s.style.top = (cy - size / 2) + 'px';
+                    s.style.width = size + 'px';
+                    s.style.height = size + 'px';
+                    s.style.background = colors[i % colors.length];
+                    s.style.animationDelay = (Math.random() * 0.08) + 's';
+                    arena.appendChild(s);
+                    setTimeout(() => s.remove(), 900);
+                }
+                const ko = document.createElement('div');
+                ko.className = 'ko-text';
+                ko.textContent = 'K.O.!';
+                ko.style.left = (cx - 40) + 'px';
+                ko.style.top = (cy - 50) + 'px';
+                arena.appendChild(ko);
+                setTimeout(() => ko.remove(), 1100);
+                arena.classList.remove('kill-shake');
+                void arena.offsetWidth;
+                arena.classList.add('kill-shake');
+                setTimeout(() => arena.classList.remove('kill-shake'), 500);
+            }
+
+            // ── targeting overlay ──
+            function openOverlay() {
+                const lvl = curLevel();
+                overlay.classList.add('show');
+                drawGrid(lvl);
+                skillSelect.innerHTML = '';
+                // Add item use options if in adventure mode
+                if (adventureMode) {
+                    const items = advState.inventory;
+                    for (const [key, count] of Object.entries(items)) {
+                        if (count > 0 && ITEMS[key]) {
+                            const btn = document.createElement('button');
+                            btn.className = 'skill-btn';
+                            btn.textContent = `${ITEMS[key].emoji} ${ITEMS[key].name} (×${count})`;
+                            btn.title = ITEMS[key].desc;
+                            btn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                closeOverlayFn();
+                                useItem(key);
+                            });
+                            skillSelect.appendChild(btn);
+                        }
+                    }
+                    // Separator
+                    const sep = document.createElement('div');
+                    sep.style.width = '100%';
+                    sep.style.textAlign = 'center';
+                    sep.style.color = '#6d7ea3';
+                    sep.style.fontSize = '6px';
+                    sep.style.padding = '4px 0';
+                    sep.textContent = '— SKILLS —';
+                    skillSelect.appendChild(sep);
+                }
+                SKILLS.forEach(skill => {
+                    const btn = document.createElement('button');
+                    btn.className = 'skill-btn' + (selectedSkill && selectedSkill.id === skill.id ? ' active' :
+                        '');
+                    btn.textContent = skill.emoji + ' ' + skill.name;
+                    btn.title = skill.description;
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        selectedSkill = skill;
+                        skillSelect.querySelectorAll('.skill-btn').forEach(b => b.classList.remove(
+                        'active'));
+                        btn.classList.add('active');
+                        overlayTitle.textContent = `⚔ ${skill.name} — ${skill.description}`;
+                    });
+                    skillSelect.appendChild(btn);
+                });
+                if (!selectedSkill) selectedSkill = SKILLS[0];
+                const firstSkill = skillSelect.querySelector('.skill-btn:not([style])');
+                if (firstSkill) firstSkill.classList.add('active');
+                overlayTitle.textContent = `⚔ ${selectedSkill.name} — ${selectedSkill.description}`;
+
+                if (lvl.mode === 'tap') {
+                    typedPanel.style.display = 'none';
+                    const [tx, ty] = currentTarget;
+                    const coords = spawnDecoys(tx, ty, lvl);
+                    renderGridCreatures(coords, 0, lvl);
+                    awaitingTypedAnswer = false;
+                } else {
+                    typedPanel.style.display = 'flex';
+                    const [tx, ty] = currentTarget;
+                    renderGridCreatures([
+                        [tx, ty]
+                    ], 0, lvl);
+                    awaitingTypedAnswer = true;
+                    typedInput.value = '';
+                    typedInput.focus();
+                }
+            }
+
+            function closeOverlayFn() { overlay.classList.remove('show'); }
+
+            function handleGridGuess(el) {
+                if (awaitingTypedAnswer) return;
+                const isTarget = el.dataset.target === 'true';
+                closeOverlayFn();
+                if (isTarget) {
+                    if (!selectedSkill) selectedSkill = SKILLS[0];
+                    performAttack(selectedSkill);
+                } else {
+                    playerHp = Math.max(playerHp - 1, 0);
+                    updateHud();
+                    pulsePlate(playerPlate);
+                    flash.classList.remove('go');
+                    void flash.offsetWidth;
+                    flash.className = 'flash';
+                    flash.classList.add('go');
+                    floatDamage(playerCanvas, 'MISS', true);
+                    setDialogue('❌ WRONG', 'That\'s not the right target!', false);
+                    if (playerHp <= 0) {
+                        setDialogue('💀 DEFEAT', 'You ran out of HP!', false);
+                        attackBtn.disabled = true;
+                        hintBtn.disabled = true;
+                        endBattle(false);
+                    }
+                }
+            }
+
+            function submitTypedFn() {
+                const val = typedInput.value.trim();
+                const match = val.match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
+                if (!match) { setDialogue('⚠ INPUT', 'Enter coordinates like "4.5,-3" (x,y)'); return; }
+                const gx = Number(match[1]),
+                    gy = Number(match[2]);
+                closeOverlayFn();
+                const okX = Math.abs(gx - currentTarget[0]) < 0.05;
+                const okY = Math.abs(gy - currentTarget[1]) < 0.05;
+                if (okX && okY) {
+                    if (!selectedSkill) selectedSkill = SKILLS[0];
+                    performAttack(selectedSkill);
+                } else {
+                    playerHp = Math.max(playerHp - 1, 0);
+                    updateHud();
+                    pulsePlate(playerPlate);
+                    flash.classList.remove('go');
+                    void flash.offsetWidth;
+                    flash.className = 'flash';
+                    flash.classList.add('go');
+                    floatDamage(playerCanvas, 'MISS', true);
+                    setDialogue('❌ WRONG', 'Incorrect coordinates!', false);
+                    if (playerHp <= 0) {
+                        setDialogue('💀 DEFEAT', 'You ran out of HP!', false);
+                        attackBtn.disabled = true;
+                        hintBtn.disabled = true;
+                        endBattle(false);
+                    }
+                }
+            }
+
+            function handleAttack() {
+                if (!battleInProgress) {
+                    setDialogue('⚠️', 'No enemy to fight!', false);
+                    return;
+                }
+                openOverlay();
+            }
+
+            // ── Adventure Mode ──
+            function enterAdventureMode() {
+                arena.classList.add('adventure-mode');
+                document.querySelector('.adventure-hud').style.display = 'block';
+                document.querySelector('.inventory-hud').style.display = 'block';
+                interactHint.style.display = 'block';
+                enemyCanvas.style.display = 'none';
+                playerCanvas.style.display = 'none';
+                enemyPlate.style.display = 'none';
+                playerPlate.style.display = 'none';
+                mapCanvas.style.display = 'block';
+                attackBtn.disabled = true;
+                hintBtn.disabled = true;
+                nextBtn.disabled = true;
+                nextBtn.textContent = '↺ EXPLORE';
+                battleInProgress = false;
+                battleTransition.classList.remove('active');
+                if (typeParticleTimer) { clearInterval(typeParticleTimer);
+                    typeParticleTimer = null; }
+                updateChapter();
+                questText.textContent = advState.creaturesDefeated >= 3 ?
+                    'The Anomaly has appeared! Find it at the center!' :
+                    `Defeat ${3 - advState.creaturesDefeated} creatures to find the Anomaly.`;
+                renderMap();
+                setDialogue('📜 STORY',
+                    'Explore the Lost Grid. Talk to NPCs with [E]. Defeat 3 creatures to face the Anomaly!', false);
+                updateHud();
+                updateInventoryHud();
+            }
+
+            function updateChapter() {
+                const total = advState.creaturesDefeated;
+                let idx = 0;
+                if (total >= 3) idx = 3;
+                else if (total >= 1) idx = 2;
+                else if (total > 0) idx = 1;
+                if (advState.gameComplete) idx = 4;
+                advState.chapterIndex = idx;
+                const chapter = STORY_CHAPTERS[idx] || STORY_CHAPTERS[0];
+                chapterText.textContent = chapter.title;
+                if (idx === 4) {
+                    questText.textContent = '🏆 Adventure complete! You saved the Grid!';
+                }
+            }
+
+            function renderMap() {
+                const ctx = mapCanvas.getContext('2d');
+                const W = mapCanvas.width,
+                    H = mapCanvas.height;
+                const tw = W / MAP_W,
+                    th = H / MAP_H;
+
+                ctx.imageSmoothingEnabled = false;
+                ctx.fillStyle = '#1a2a3a';
+                ctx.fillRect(0, 0, W, H);
+
+                const cx = advState.playerX * tw + tw / 2;
+                const cy = advState.playerY * th + th / 2;
+                const viewW = W,
+                    viewH = H;
+                const offsetX = clamp(cx - viewW / 2, 0, MAP_W * tw - viewW);
+                const offsetY = clamp(cy - viewH / 2, 0, MAP_H * th - viewH);
+
+                const map = advState.map;
+                const npcs = advState.npcs;
+
+                // Draw tiles
+                for (let y = 0; y < MAP_H; y++) {
+                    for (let x = 0; x < MAP_W; x++) {
+                        const tile = map[y][x];
+                        const px = x * tw - offsetX;
+                        const py = y * th - offsetY;
+                        if (px < -tw || px > W + tw || py < -th || py > H + th) continue;
+                        let color = '#2a5a3a';
+                        switch (tile) {
+                            case MAP_TILES.GRASS:
+                                color = (x + y) % 2 === 0 ? '#2a5a3a' : '#2f6240';
+                                break;
+                            case MAP_TILES.GRASS2:
+                                color = (x + y) % 2 === 0 ? '#3a6a4a' : '#3f6f4f';
+                                break;
+                            case MAP_TILES.PATH:
+                                color = '#8a8a6a';
+                                break;
+                            case MAP_TILES.TREE:
+                                color = '#1a3a1a';
+                                break;
+                            case MAP_TILES.WATER:
+                                color = '#1a3a5a';
+                                break;
+                            case MAP_TILES.STONE:
+                                color = '#5a5a5a';
+                                break;
+                            case MAP_TILES.FLOWER:
+                                color = (x + y) % 2 === 0 ? '#2a5a3a' : '#3a6a4a';
+                                break;
+                            case MAP_TILES.TOWN:
+                                color = '#5a4a3a';
+                                break;
+                            case MAP_TILES.BRIDGE:
+                                color = '#6a5a3a';
+                                break;
+                            default:
+                                color = '#2a5a3a';
+                        }
+                        ctx.fillStyle = color;
+                        ctx.fillRect(px, py, tw, th);
+
+                        // Decorative details
+                        if (tile === MAP_TILES.FLOWER) {
+                            const petalColor = (x + y) % 3 === 0 ? '#f2c14e' : (x + y) % 3 === 1 ? '#e8544b' :
+                            '#5be7d9';
+                            ctx.fillStyle = petalColor;
+                            ctx.fillRect(px + tw / 2 - 2, py + th / 2 - 2, 4, 4);
+                            ctx.fillStyle = '#fff';
+                            ctx.fillRect(px + tw / 2 - 1, py + th / 2 - 1, 2, 2);
+                        } else if (tile === MAP_TILES.TREE) {
+                            ctx.fillStyle = '#0a2a0a';
+                            ctx.fillRect(px + tw / 2 - 2, py + th / 2, 4, 6);
+                            ctx.fillStyle = '#2a6a2a';
+                            ctx.fillRect(px + tw / 2 - 5, py + th / 2 - 6, 10, 6);
+                            ctx.fillStyle = '#3a7a3a';
+                            ctx.fillRect(px + tw / 2 - 3, py + th / 2 - 9, 6, 4);
+                            ctx.fillStyle = 'rgba(0,0,0,0.15)';
+                            ctx.fillRect(px + tw / 2 - 1, py + th / 2 + 4, 2, 2);
+                        } else if (tile === MAP_TILES.WATER) {
+                            ctx.fillStyle = 'rgba(100,200,255,0.15)';
+                            ctx.fillRect(px + tw / 4, py + th / 4, tw / 2, th / 2);
+                            ctx.fillStyle = 'rgba(100,200,255,0.08)';
+                            const wave = (x * 7 + y * 13 + Date.now() / 2000) % 20;
+                            ctx.fillRect(px + wave, py + th / 3, 4, 2);
+                            ctx.fillRect(px + tw - wave, py + th * 2 / 3, 4, 2);
+                            const sparkle = (x * 11 + y * 17 + Math.floor(Date.now() / 400)) % 30;
+                            if (sparkle < 3) {
+                                ctx.fillStyle = 'rgba(255,255,255,0.6)';
+                                ctx.fillRect(px + tw / 2 + sparkle * 2, py + th / 3 + sparkle * 3, 2, 2);
+                            }
+                        } else if (tile === MAP_TILES.STONE) {
+                            ctx.fillStyle = '#3a3a3a';
+                            ctx.fillRect(px + tw / 4, py + th / 4, tw / 2, th / 2);
+                            ctx.fillStyle = '#4a4a4a';
+                            ctx.fillRect(px + tw / 3, py + th / 3, tw / 4, th / 4);
+                            ctx.fillStyle = '#2a2a2a';
+                            ctx.fillRect(px + tw / 2 - 1, py + th / 2 - 1, 2, 2);
+                        } else if (tile === MAP_TILES.TOWN) {
+                            ctx.fillStyle = '#6a5a4a';
+                            ctx.fillRect(px + tw / 2 - 6, py + th / 2 - 4, 12, 8);
+                            ctx.fillStyle = '#7a6a5a';
+                            ctx.fillRect(px + tw / 2 - 5, py + th / 2 - 3, 10, 6);
+                            ctx.fillStyle = '#f2c14e';
+                            ctx.fillRect(px + tw / 2 - 1, py + th / 2 - 5, 2, 2);
+                            ctx.fillStyle = '#e8544b';
+                            ctx.fillRect(px + tw / 2 - 4, py + th / 2 - 5, 2, 2);
+                            ctx.fillRect(px + tw / 2 + 2, py + th / 2 - 5, 2, 2);
+                        } else if (tile === MAP_TILES.BRIDGE) {
+                            ctx.fillStyle = '#6a5a3a';
+                            ctx.fillRect(px, py + th / 2 - 2, tw, 4);
+                            ctx.fillStyle = '#7a6a4a';
+                            ctx.fillRect(px + 2, py + th / 2 - 1, tw - 4, 2);
+                            ctx.fillStyle = '#5a4a2a';
+                            for (let i = 0; i < 5; i++) {
+                                ctx.fillRect(px + 4 + i * 6, py + th / 2 - 3, 2, 2);
+                            }
+                        }
+                    }
+                }
+
+                // Draw NPCs with dynamic emote bubbles
+                npcs.forEach(npc => {
+                    const px = npc.x * tw - offsetX + tw / 2;
+                    const py = npc.y * th - offsetY + th / 2 - 4;
+                    if (px < -16 || px > W + 16 || py < -16 || py > H + 16) return;
+                    const isNear = Math.abs(advState.playerX - npc.x) <= 1.2 && Math.abs(advState.playerY - npc
+                        .y) <= 1.2;
+
+                    if (isNear) {
+                        ctx.shadowColor = npc.color || '#f2c14e';
+                        ctx.shadowBlur = 20;
+                    }
+
+                    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                    ctx.beginPath();
+                    ctx.arc(px + 2, py + 12, 6, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = npc.color || '#f2c14e';
+                    ctx.beginPath();
+                    ctx.arc(px, py, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+
+                    ctx.shadowBlur = 0;
+
+                    ctx.font = '14px monospace';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = '#000';
+                    ctx.fillText(npc.sprite || '?', px, py + 1);
+
+                    // Emote bubble (dynamic interaction)
+                    if (isNear && !advState.inDialogue) {
+                        const emoteY = py - 22 - 4 * Math.sin(Date.now() / 300);
+                        ctx.font = '12px monospace';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                        ctx.fillRect(px - 8, emoteY - 10, 16, 14);
+                        ctx.fillStyle = '#fff';
+                        ctx.fillRect(px - 7, emoteY - 9, 14, 12);
+                        ctx.fillStyle = '#000';
+                        ctx.fillText(npc.emote || '💬', px, emoteY + 2);
+                    }
+
+                    ctx.font = '6px "Press Start 2P", monospace';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'bottom';
+                    ctx.fillStyle = '#eaf2ff';
+                    ctx.shadowColor = '#000';
+                    ctx.shadowBlur = 4;
+                    ctx.fillText(npc.name, px, py - 12);
+                    ctx.shadowBlur = 0;
+
+                    if (isNear) {
+                        ctx.strokeStyle = '#f2c14e';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.arc(px, py, 12, 0, Math.PI * 2);
+                        ctx.stroke();
+                        ctx.strokeStyle = 'rgba(242,193,78,0.3)';
+                        ctx.lineWidth = 4;
+                        ctx.beginPath();
+                        ctx.arc(px, py, 16, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                });
+
+                // Player
+                const px = advState.playerX * tw - offsetX + tw / 2;
+                const py = advState.playerY * th - offsetY + th / 2;
+                ctx.fillStyle = 'rgba(0,0,0,0.4)';
+                ctx.beginPath();
+                ctx.arc(px + 2, py + 10, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.shadowColor = '#3a6ea5';
+                ctx.shadowBlur = 15;
+                ctx.fillStyle = '#3a6ea5';
+                ctx.beginPath();
+                ctx.arc(px, py - 2, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                ctx.fillStyle = '#eaf2ff';
+                ctx.fillRect(px - 4, py - 4, 3, 3);
+                ctx.fillRect(px + 2, py - 4, 3, 3);
+                ctx.fillStyle = '#1a2a3a';
+                const eyeOff = advState.facing === 'left' ? -1 : advState.facing === 'right' ? 1 : 0;
+                ctx.fillRect(px - 3 + eyeOff, py - 3, 2, 2);
+                ctx.fillRect(px + 3 + eyeOff, py - 3, 2, 2);
+                ctx.fillStyle = '#e8544b';
+                ctx.fillRect(px - 5, py - 9, 10, 3);
+                ctx.fillRect(px - 3, py - 12, 6, 4);
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(px - 5, py - 9, 10, 3);
+                ctx.strokeRect(px - 3, py - 12, 6, 4);
+
+                // Interaction hint
+                const nearNpc = npcs.find(n => Math.abs(advState.playerX - n.x) <= 1.2 && Math.abs(advState.playerY - n
+                    .y) <= 1.2);
+                if (nearNpc && !advState.inDialogue && !battleInProgress) {
+                    interactHint.textContent = `[E] TALK — ${nearNpc.name}`;
+                    interactHint.style.display = 'block';
+                } else if (!advState.inDialogue) {
+                    interactHint.style.display = 'none';
+                }
+
+                // NPC dialogue bubble
+                if (advState.inDialogue && advState.currentNpc) {
+                    const npc = advState.currentNpc;
+                    const npx = npc.x * tw - offsetX + tw / 2;
+                    const npy = npc.y * th - offsetY + th / 2 - 30;
+                    if (npx > 0 && npx < W && npy > 0) {
+                        const dlg = npc.dialogue[advState.dialogueIndex] || '...';
+                        ctx.fillStyle = 'rgba(0,0,0,0.9)';
+                        const tw2 = Math.min(dlg.length * 6 + 24, 200);
+                        const th2 = 32;
+                        const bx = clamp(npx - tw2 / 2, 4, W - tw2 - 4);
+                        const by = clamp(npy - th2 - 8, 4, H - th2 - 4);
+                        ctx.shadowColor = '#000';
+                        ctx.shadowBlur = 10;
+                        ctx.fillRect(bx, by, tw2, th2);
+                        ctx.shadowBlur = 0;
+                        ctx.strokeStyle = '#f2c14e';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(bx, by, tw2, th2);
+                        ctx.fillStyle = '#eaf2ff';
+                        ctx.font = '9px "VT323", monospace';
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(dlg, bx + 8, by + th2 / 2);
+                        ctx.fillStyle = '#f2c14e';
+                        ctx.font = '6px "Press Start 2P", monospace';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        const more = advState.dialogueIndex < npc.dialogue.length - 1 ? '[E] next' : '[E] close';
+                        ctx.fillText(more, bx + tw2 / 2, by - 3);
+                    }
+                }
+
+                // Anomaly indicator with pulse
+                if (advState.creaturesDefeated >= 3 && !advState.gameComplete) {
+                    const ax = 16 * tw - offsetX + tw / 2;
+                    const ay = 12 * th - offsetY + th / 2;
+                    if (ax > 0 && ax < W && ay > 0 && ay < H) {
+                        const pulse = 0.6 + 0.4 * Math.sin(Date.now() / 300);
+                        ctx.fillStyle = `rgba(255,50,50,${0.08 * pulse})`;
+                        ctx.beginPath();
+                        ctx.arc(ax, ay, 35, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.strokeStyle = `rgba(255,50,50,${0.25 * pulse})`;
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([4, 8]);
+                        ctx.beginPath();
+                        ctx.arc(ax, ay, 25, 0, Math.PI * 2);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                        ctx.strokeStyle = `rgba(255,50,50,${0.1 * pulse})`;
+                        ctx.lineWidth = 8;
+                        ctx.beginPath();
+                        ctx.arc(ax, ay, 30, 0, Math.PI * 2);
+                        ctx.stroke();
+                        ctx.fillStyle = '#ff3b3b';
+                        ctx.font = '24px monospace';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.shadowColor = '#ff3b3b';
+                        ctx.shadowBlur = 20;
+                        ctx.fillText('🌀', ax, ay + 1);
+                        ctx.shadowBlur = 0;
+                        ctx.fillStyle = '#ff6b6b';
+                        ctx.font = '6px "Press Start 2P", monospace';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        ctx.fillText('ANOMALY', ax, ay - 24);
+                        ctx.fillStyle = '#ff6b6b';
+                        ctx.font = '6px "VT323", monospace';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'top';
+                        ctx.fillText('[E] to challenge', ax, ay + 28);
+                    }
+                }
+
+                coordText.textContent = `${advState.playerX}, ${advState.playerY}`;
+            }
+
+            // ── Interactive NPC dialogue ──
+            function interactWithNpc() {
+                // Check if near Anomaly
+                if (advState.creaturesDefeated >= 3 && !advState.gameComplete) {
+                    const dx = Math.abs(advState.playerX - 16);
+                    const dy = Math.abs(advState.playerY - 12);
+                    if (dx <= 1.5 && dy <= 1.5) {
+                        // Start Anomaly battle
+                        const anomalyNpc = {
+                            id: 'anomaly_battle',
+                            name: 'THE ANOMALY',
+                            battleName: 'THE ANOMALY',
+                            battleVariant: BOSS_TYPE_INDEX,
+                            isBoss: true,
+                            trigger: 'battle'
+                        };
+                        startAdventureBattle(anomalyNpc);
+                        return;
+                    }
+                }
+
+                if (advState.inDialogue) {
+                    const npc = advState.currentNpc;
+                    if (advState.dialogueIndex < npc.dialogue.length - 1) {
+                        advState.dialogueIndex++;
+                        renderMap();
+                        return;
+                    } else {
+                        // End dialogue
+                        advState.inDialogue = false;
+                        const npcRef = advState.currentNpc;
+                        advState.currentNpc = null;
+                        advState.dialogueIndex = 0;
+
+                        // Give item from NPC if applicable
+                        if (npcRef.givesItem && !npcRef._gaveItem) {
+                            const itemKey = npcRef.givesItem;
+                            if (ITEMS[itemKey]) {
+                                advState.inventory[itemKey] = (advState.inventory[itemKey] || 0) + 1;
+                                npcRef._gaveItem = true;
+                                setDialogue('📦 ITEM', `${npcRef.name} gave you a ${ITEMS[itemKey].name}!`, false);
+                                sfx('item');
+                                updateInventoryHud();
+                            }
+                        }
+
+                        // Check if this NPC triggers a battle
+                        if (npcRef.trigger === 'battle') {
+                            const npcInList = advState.npcs.find(n => n.id === npcRef.id);
+                            if (npcInList && npcInList.questState === 0) {
+                                startAdventureBattle(npcRef);
+                                return;
+                            } else {
+                                setDialogue('💬', `${npcRef.name} has already been defeated!`, false);
+                                renderMap();
+                                return;
+                            }
+                        }
+
+                        // Handle quest triggers
+                        if (npcRef.trigger === 'start' || npcRef.trigger === 'merchant' ||
+                            npcRef.trigger === 'guard' || npcRef.trigger === 'sage') {
+                            if (npcRef.id === 'elder' && advState.creaturesDefeated === 0) {
+                                setDialogue('📜 QUEST', 'Defeat 3 creatures to find the Anomaly.', false);
+                                const elder = advState.npcs.find(n => n.id === 'elder');
+                                if (elder) elder.questState = 1;
+                            }
+                            if (npcRef.id === 'merchant' && advState.creaturesDefeated >= 3) {
+                                setDialogue('💰 REWARD', 'You earned a Key Fragment!', false);
+                                const merchant = advState.npcs.find(n => n.id === 'merchant');
+                                if (merchant) merchant.questState = 2;
+                                advState.inventory.key_fragment = (advState.inventory.key_fragment || 0) + 1;
+                                sfx('item');
+                                updateInventoryHud();
+                            }
+                            if (npcRef.id === 'guard' && advState.creaturesDefeated >= 3) {
+                                setDialogue('🛡️ GUARD', 'You\'re ready for the Anomaly! Find it at the center.',
+                                false);
+                                const guard = advState.npcs.find(n => n.id === 'guard');
+                                if (guard) guard.questState = 2;
+                            }
+                            if (npcRef.id === 'sage') {
+                                setDialogue('🧠 SAGE', 'Remember: (x,y) — x is horizontal, y is vertical!',
+                                false);
+                                const sage = advState.npcs.find(n => n.id === 'sage');
+                                if (sage) sage.questState = 1;
+                            }
+                        }
+
+                        renderMap();
+                        return;
+                    }
+                }
+
+                // Find nearby NPC
+                const nearNpc = advState.npcs.find(n => Math.abs(advState.playerX - n.x) <= 1.2 && Math.abs(advState
+                    .playerY - n.y) <= 1.2);
+                if (!nearNpc) {
+                    setDialogue('🔍 EXPLORE', 'No one nearby. Keep exploring!', false);
+                    return;
+                }
+
+                // If it's a battle NPC that's already defeated
+                if (nearNpc.trigger === 'battle' && nearNpc.questState === 2) {
+                    setDialogue('💬', `${nearNpc.name} has been defeated. Move on!`, false);
+                    return;
+                }
+
+                advState.inDialogue = true;
+                advState.currentNpc = nearNpc;
+                advState.dialogueIndex = 0;
+                renderMap();
+                setDialogue('💬 TALK', `Speaking with ${nearNpc.name}...`, false);
+                sfx('walk');
+            }
+
+            function checkAdventureQuests() {
+                if (advState.creaturesDefeated >= 3) {
+                    questText.textContent = 'The Anomaly has appeared at the center! Go challenge it!';
+                    // Add Anomaly indicator (it's handled in render)
+                    updateChapter();
+                }
+                if (advState.creaturesDefeated >= 3 && advState.gameComplete) {
+                    questText.textContent = '🏆 You saved the Grid! Adventure complete!';
+                }
+            }
+
+            // ── Movement ──
+            function movePlayer(dx, dy) {
+                if (advState.inDialogue) return;
+                if (battleInProgress) return;
+                if (advState.moveCooldown > 0) return;
+                if (advState.gameComplete) return;
+
+                const newX = advState.playerX + dx;
+                const newY = advState.playerY + dy;
+                if (newX < 0 || newX >= MAP_W || newY < 0 || newY >= MAP_H) return;
+                const tile = advState.map[newY][newX];
+                if (tile === MAP_TILES.TREE || tile === MAP_TILES.WATER || tile === MAP_TILES.STONE) return;
+                const npcBlock = advState.npcs.some(n => n.x === newX && n.y === newY && n.questState !== 2);
+                if (npcBlock) return;
+
+                if (dx < 0) advState.facing = 'left';
+                else if (dx > 0) advState.facing = 'right';
+                else if (dy < 0) advState.facing = 'up';
+                else if (dy > 0) advState.facing = 'down';
+
+                advState.playerX = newX;
+                advState.playerY = newY;
+                advState.moveCooldown = 5;
+                advState.isMoving = true;
+                sfx('walk');
+                renderMap();
+            }
+
+            function updateMovement() {
+                if (advState.moveCooldown > 0) {
+                    advState.moveCooldown--;
+                } else {
+                    advState.isMoving = false;
+                }
+
+                if (!adventureMode || battleInProgress || advState.inDialogue) return;
+
+                const keys = advState.keys;
+                let dx = 0,
+                    dy = 0;
+                if (keys.left) dx = -1;
+                if (keys.right) dx = 1;
+                if (keys.up) dy = -1;
+                if (keys.down) dy = 1;
+
+                if (dx !== 0 && dy !== 0) {
+                    if (Math.abs(dx) > Math.abs(dy)) dy = 0;
+                    else dx = 0;
+                }
+
+                if (dx !== 0 || dy !== 0) {
+                    movePlayer(dx, dy);
+                }
+            }
+
+            // ── dodge phase ──
+            function openDodgePhase(onSuccess) {
+                dodgeOverlay.classList.add('show');
+                dodgeTitle.textContent = (enemyHp <= Math.ceil(enemyHpMax / 2)) ? '⚡ IT MOVES FASTER NOW' :
+                    'SURVIVE THE ONSLAUGHT';
+                const boxW = dodgeBox.clientWidth,
+                    boxH = dodgeBox.clientHeight;
+                let px = boxW / 2 - 7,
+                    py = boxH / 2 - 7;
+                dodgePlayer.style.left = px + 'px';
+                dodgePlayer.style.top = py + 'px';
+                dodgePlayer.classList.remove('invuln');
+
+                const keys = {};
+                let invuln = false,
+                    bolts = [],
+                    running = true,
+                    timeLeft = 6;
+                dodgeTimer.textContent = timeLeft;
+
+                const keydown = (e) => { keys[e.key] = true; };
+                const keyup = (e) => { keys[e.key] = false; };
+                window.addEventListener('keydown', keydown);
+                window.addEventListener('keyup', keyup);
+
+                let pointerActive = false;
+
+                function pointerMove(e) {
+                    if (!pointerActive) return;
+                    const rect = dodgeBox.getBoundingClientRect();
+                    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+                    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+                    px = clamp(cx - rect.left - 7, 0, boxW - 14);
+                    py = clamp(cy - rect.top - 7, 0, boxH - 14);
+                    e.preventDefault();
+                }
+
+                function pointerDown(e) { pointerActive = true;
+                    pointerMove(e); }
+
+                function pointerUp() { pointerActive = false; }
+                dodgeBox.addEventListener('pointerdown', pointerDown);
+                dodgeBox.addEventListener('pointermove', pointerMove);
+                window.addEventListener('pointerup', pointerUp);
+
+                function spawnBolt() {
+                    const edge = Math.floor(Math.random() * 4);
+                    const fast = enemyHp <= Math.ceil(enemyHpMax / 2);
+                    const speed = (fast ? 140 : 100) + Math.random() * 40;
+                    let bx, by, vx, vy;
+                    if (edge === 0) { bx = -10;
+                        by = Math.random() * boxH;
+                        vx = speed;
+                        vy = (Math.random() - 0.5) * speed * 0.6; } else if (edge === 1) { bx = boxW + 10;
+                        by = Math.random() * boxH;
+                        vx = -speed;
+                        vy = (Math.random() - 0.5) * speed * 0.6; } else if (edge === 2) { bx = Math.random() * boxW;
+                        by = -10;
+                        vx = (Math.random() - 0.5) * speed * 0.6;
+                        vy = speed; } else { bx = Math.random() * boxW;
+                        by = boxH + 10;
+                        vx = (Math.random() - 0.5) * speed * 0.6;
+                        vy = -speed; }
+                    const size = 6 + Math.random() * 5;
+                    const el = document.createElement('div');
+                    el.className = 'dodge-bolt';
+                    el.style.width = size + 'px';
+                    el.style.height = size + 'px';
+                    dodgeBox.appendChild(el);
+                    bolts.push({ x: bx, y: by, vx, vy, size, el });
+                }
+                const boltInterval = (enemyHp <= Math.ceil(enemyHpMax / 2)) ? 220 : 360;
+                const boltTimer = setInterval(() => { if (running) spawnBolt(); }, boltInterval);
+
+                let lastT = performance.now();
+
+                function frame(t) {
+                    if (!running) return;
+                    const dt = Math.min((t - lastT) / 1000, 0.05);
+                    lastT = t;
+                    const speed = 200;
+                    if (keys['ArrowLeft'] || keys['a'] || keys['A']) px -= speed * dt;
+                    if (keys['ArrowRight'] || keys['d'] || keys['D']) px += speed * dt;
+                    if (keys['ArrowUp'] || keys['w'] || keys['W']) py -= speed * dt;
+                    if (keys['ArrowDown'] || keys['s'] || keys['S']) py += speed * dt;
+                    px = clamp(px, 0, boxW - 14);
+                    py = clamp(py, 0, boxH - 14);
+                    dodgePlayer.style.left = px + 'px';
+                    dodgePlayer.style.top = py + 'px';
+
+                    for (let i = bolts.length - 1; i >= 0; i--) {
+                        const b = bolts[i];
+                        b.x += b.vx * dt;
+                        b.y += b.vy * dt;
+                        b.el.style.left = b.x + 'px';
+                        b.el.style.top = b.y + 'px';
+                        if (b.x < -20 || b.x > boxW + 20 || b.y < -20 || b.y > boxH + 20) { b.el.remove();
+                            bolts.splice(i, 1); continue; }
+                        if (!invuln) {
+                            const overlap = px < b.x + b.size && px + 14 > b.x && py < b.y + b.size && py + 14 > b
+                            .y;
+                            if (overlap) {
+                                invuln = true;
+                                dodgePlayer.classList.add('invuln');
+                                playerHp = Math.max(playerHp - 1, 0);
+                                updateHud();
+                                pulsePlate(playerPlate);
+                                flash.classList.remove('go');
+                                void flash.offsetWidth;
+                                flash.className = 'flash';
+                                flash.classList.add('go');
+                                setTimeout(() => { invuln = false;
+                                    dodgePlayer.classList.remove('invuln'); }, 700);
+                                if (playerHp <= 0) { endPhase(false); return; }
+                            }
+                        }
+                    }
+                    if (running) requestAnimationFrame(frame);
+                }
+                requestAnimationFrame(frame);
+
+                const secTimer = setInterval(() => {
+                    timeLeft--;
+                    dodgeTimer.textContent = Math.max(timeLeft, 0);
+                    if (timeLeft <= 0) endPhase(true);
+                }, 1000);
+
+                function endPhase(success) {
+                    if (!running) return;
+                    running = false;
+                    clearInterval(boltTimer);
+                    clearInterval(secTimer);
+                    window.removeEventListener('keydown', keydown);
+                    window.removeEventListener('keyup', keyup);
+                    dodgeBox.removeEventListener('pointerdown', pointerDown);
+                    dodgeBox.removeEventListener('pointermove', pointerMove);
+                    window.removeEventListener('pointerup', pointerUp);
+                    bolts.forEach(b => b.el.remove());
+                    bolts = [];
+                    dodgeOverlay.classList.remove('show');
+                    if (success && playerHp > 0) { onSuccess(); } else if (playerHp <= 0) {
+                        setDialogue('💀 DEFEAT', 'You were overwhelmed!', false);
+                        playerHp = PLAYER_HP_SEGMENTS;
+                        updateHud();
+                        endBattle(false);
+                    }
+                }
+            }
+
+            // ── init player ──
+            function initPlayer() {
+                drawPlayerSprite(playerCanvas);
+                playerCanvas.style.width = '100px';
+                playerCanvas.style.height = '100px';
+                bounceSprite(playerCanvas);
+            }
+
+            // ── tutor ──
+            function buildTutorSystemPrompt() {
+                const lvl = curLevel();
+                let stateLine = 'No battle active.';
+                if (currentTarget && battleInProgress) {
+                    const [tx, ty] = currentTarget;
+                    const quad = lvl.quadrantOnly ? 'Quadrant I' : `Quadrant ${quadrantOf(tx, ty)}`;
+                    stateLine =
+                        `Current creature "${enemyName.textContent}" at (${fmt(tx,lvl)}, ${fmt(ty,lvl)}) in ${quad}. Enemy HP: ${enemyHp}/${ENEMY_HP_SEGMENTS}. Player HP: ${playerHp}/${PLAYER_HP_SEGMENTS}.`;
+                } else if (adventureMode) {
+                    stateLine =
+                        `Adventure mode: exploring the Lost Grid. Player at (${advState.playerX}, ${advState.playerY}). Creatures defeated: ${advState.creaturesDefeated}/3. Chapter: ${STORY_CHAPTERS[advState.chapterIndex]?.title || 'Prologue'}`;
+                }
+                return `You are Professor Axis, a friendly retro-RPG tutor inside "Coordinate Battle: The Lost Grid" — a pixel game that teaches the Cartesian plane.
+
+        Give mathematically accurate, clear explanations. Keep answers short (2–4 sentences). Use plain language.
+
+        Game: Level "${lvl.title}" — ${lvl.desc}. ${stateLine}
+
+        If asked for help finding the target, guide them to reason: sign of x (left/right), sign of y (up/down), quadrant.`;
+            }
+
+            function addBubble(role, text) {
+                const b = document.createElement('div');
+                b.className = 'bubble ' + role;
+                const tag = document.createElement('span');
+                tag.className = 'tag';
+                tag.textContent = role === 'tutor' ? 'PROF. AXIS' : 'YOU';
+                b.appendChild(tag);
+                const body = document.createElement('span');
+                body.textContent = text;
+                b.appendChild(body);
+                tutorLog.appendChild(b);
+                tutorLog.scrollTop = tutorLog.scrollHeight;
+                return b;
+            }
+
+            async function sendTutorMessage() {
+                const text = tutorInput.value.trim();
+                if (!text || tutorBusy) return;
+                tutorInput.value = '';
+                addBubble('player', text);
+                tutorMessages.push({ role: 'user', content: text });
+
+                tutorBusy = true;
+                tutorSend.disabled = true;
+                const think = document.createElement('div');
+                think.className = 'bubble thinking';
+                think.textContent = 'Prof. Axis is thinking…';
+                tutorLog.appendChild(think);
+                tutorLog.scrollTop = tutorLog.scrollHeight;
+
+                try {
+                    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            model: 'claude-sonnet-4-6',
+                            max_tokens: 1000,
+                            system: buildTutorSystemPrompt(),
+                            messages: tutorMessages
+                        })
+                    });
+                    const data = await resp.json();
+                    const reply = (data.content || []).map(b => b.type === 'text' ? b.text : '').filter(Boolean).join(
+                        '\n').trim() || "Comms static… I didn't catch that. Try again?";
+                    think.remove();
+                    addBubble('tutor', reply);
+                    tutorMessages.push({ role: 'assistant', content: reply });
+                } catch (_) {
+                    think.remove();
+                    addBubble('tutor', "Signal lost — try sending that again.");
+                } finally {
+                    tutorBusy = false;
+                    tutorSend.disabled = false;
+                    tutorInput.focus();
+                }
+            }
+
+            // ── SAVE / LOAD ──
+            function saveGame() {
+                try {
+                    const data = {
+                        advState: {
+                            playerX: advState.playerX,
+                            playerY: advState.playerY,
+                            facing: advState.facing,
+                            creaturesDefeated: advState.creaturesDefeated,
+                            inventory: advState.inventory,
+                            chapterIndex: advState.chapterIndex,
+                            gameComplete: advState.gameComplete,
+                            npcs: advState.npcs,
+                        },
+                        score: score,
+                        round: round,
+                        playerHp: playerHp,
+                        levelIndex: levelIndex,
+                        adventureMode: adventureMode,
+                    };
+                    localStorage.setItem('coordinate_battle_save', JSON.stringify(data));
+                    setDialogue('💾 SAVE', 'Game saved successfully!', false);
+                    sfx('item');
+                } catch (e) {
+                    setDialogue('💾 SAVE', 'Failed to save game.', false);
+                }
+            }
+
+            function loadGame() {
+                try {
+                    const raw = localStorage.getItem('coordinate_battle_save');
+                    if (!raw) { setDialogue('💾 LOAD', 'No save found.', false); return; }
+                    const data = JSON.parse(raw);
+                    if (data.advState) {
+                        advState.playerX = data.advState.playerX || 10;
+                        advState.playerY = data.advState.playerY || 8;
+                        advState.facing = data.advState.facing || 'down';
+                        advState.creaturesDefeated = data.advState.creaturesDefeated || 0;
+                        advState.inventory = data.advState.inventory || { health_potion: 1 };
+                        advState.chapterIndex = data.advState.chapterIndex || 0;
+                        advState.gameComplete = data.advState.gameComplete || false;
+                        if (data.advState.npcs) advState.npcs = data.advState.npcs;
+                    }
+                    if (data.score !== undefined) score = data.score;
+                    if (data.round !== undefined) round = data.round;
+                    if (data.playerHp !== undefined) playerHp = data.playerHp;
+                    if (data.levelIndex !== undefined) levelIndex = data.levelIndex;
+                    if (data.adventureMode !== undefined) adventureMode = data.adventureMode;
+                    updateHud();
+                    updateInventoryHud();
+                    if (adventureMode) enterAdventureMode();
+                    else spawnEnemy();
+                    setDialogue('💾 LOAD', 'Game loaded successfully!', false);
+                    sfx('item');
+                } catch (e) {
+                    setDialogue('💾 LOAD', 'Failed to load save.', false);
+                }
+            }
+
+            // ── intro ──
+            function buildIntroStars() {
+                let html = '';
+                for (let i = 0; i < 50; i++) {
+                    const left = Math.random() * 100,
+                        top = Math.random() * 70;
+                    const delay = (Math.random() * 3).toFixed(2);
+                    html += `<div class="star" style="left:${left}%;top:${top}%;animation-delay:${delay}s;"></div>`;
+                }
+                introStars.innerHTML = html;
+            }
+
+            function buildIntroLevelCards() {
+                introLevels.innerHTML = '';
+                LEVELS.forEach((lvl, i) => {
+                    const card = document.createElement('div');
+                    card.className = 'intro-card' + (i === levelIndex ? ' selected' : '');
+                    card.innerHTML =
+                        `<div class="lv-title">${lvl.chip}</div><div class="lv-desc">${lvl.title} — ${lvl.desc}</div>`;
+                    card.addEventListener('click', () => {
+                        levelIndex = i;
+                        [...introLevels.children].forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+                        syncTopBarLevels();
+                    });
+                    introLevels.appendChild(card);
+                });
+            }
+
+            function buildTopBarLevels() {
+                levelSelect.innerHTML = '';
+                LEVELS.forEach((lvl, i) => {
+                    const chip = document.createElement('div');
+                    chip.className = 'lv-chip' + (i === levelIndex ? ' active' : '');
+                    chip.textContent = lvl.chip;
+                    chip.addEventListener('click', () => {
+                        levelIndex = i;
+                        syncTopBarLevels();
+                        restartBattle();
+                    });
+                    levelSelect.appendChild(chip);
+                });
+            }
+
+            function syncTopBarLevels() {
+                [...levelSelect.children].forEach((c, i) => c.classList.toggle('active', i === levelIndex));
+                [...introLevels.children].forEach((c, i) => c.classList.toggle('selected', i === levelIndex));
+            }
+
+            // ── event wiring ──
+            modeAdventure.addEventListener('click', function() {
+                document.querySelectorAll('.intro-mode-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                adventureMode = true;
+                introStartBtn.textContent = '▶ START ADVENTURE';
+            });
+            modeBattle.addEventListener('click', function() {
+                document.querySelectorAll('.intro-mode-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                adventureMode = false;
+                introStartBtn.textContent = '▶ START BATTLE';
+            });
+
+            introStartBtn.addEventListener('click', () => {
+                const introScreen = document.getElementById('introScreen');
+                introScreen.classList.add('hide');
+                setTimeout(() => { introScreen.style.display = 'none'; }, 600);
+                // Init audio on user interaction
+                initAudio();
+                // Try to load save
+                const hasSave = localStorage.getItem('coordinate_battle_save');
+                if (hasSave) {
+                    setDialogue('💾', 'Save found! Loading...', false);
+                    setTimeout(() => loadGame(), 300);
+                } else {
+                    restartBattle();
+                }
+            });
+
+            // ── Keyboard controls ──
+            window.addEventListener('keydown', (e) => {
+                const key = e.key;
+
+                // Init audio on any keypress
+                if (!audioInitialized && (key === 'w' || key === 'W' || key === 'ArrowUp' ||
+                        key === 's' || key === 'S' || key === 'ArrowDown' ||
+                        key === 'a' || key === 'A' || key === 'ArrowLeft' ||
+                        key === 'd' || key === 'D' || key === 'ArrowRight' ||
+                        key === 'e' || key === 'E')) {
+                    initAudio();
+                }
+
+                if (adventureMode && !battleInProgress && !advState.inDialogue) {
+                    if (key === 'w' || key === 'W' || key === 'ArrowUp') {
+                        e.preventDefault();
+                        advState.keys.up = true;
+                    }
+                    if (key === 's' || key === 'S' || key === 'ArrowDown') {
+                        e.preventDefault();
+                        advState.keys.down = true;
+                    }
+                    if (key === 'a' || key === 'A' || key === 'ArrowLeft') {
+                        e.preventDefault();
+                        advState.keys.left = true;
+                    }
+                    if (key === 'd' || key === 'D' || key === 'ArrowRight') {
+                        e.preventDefault();
+                        advState.keys.right = true;
+                    }
+                    if (key === 'e' || key === 'E') {
+                        e.preventDefault();
+                        interactWithNpc();
+                    }
+                    if (key === 'i' || key === 'I') {
+                        e.preventDefault();
+                        renderFullInventory();
+                        inventoryOverlay.classList.add('show');
+                    }
+                }
+
+                if (key === 'Escape') {
+                    if (overlay.classList.contains('show')) closeOverlayFn();
+                    if (tutorOverlay.classList.contains('show')) tutorOverlay.classList.remove('show');
+                    if (dodgeOverlay.classList.contains('show')) dodgeOverlay.classList.remove('show');
+                    if (inventoryOverlay.classList.contains('show')) inventoryOverlay.classList.remove('show');
+                    if (advState.inDialogue) {
+                        advState.inDialogue = false;
+                        advState.currentNpc = null;
+                        advState.dialogueIndex = 0;
+                        renderMap();
+                    }
+                }
+            });
+
+            window.addEventListener('keyup', (e) => {
+                const key = e.key;
+                if (key === 'w' || key === 'W' || key === 'ArrowUp') { e.preventDefault();
+                    advState.keys.up = false; }
+                if (key === 's' || key === 'S' || key === 'ArrowDown') { e.preventDefault();
+                    advState.keys.down = false; }
+                if (key === 'a' || key === 'A' || key === 'ArrowLeft') { e.preventDefault();
+                    advState.keys.left = false; }
+                if (key === 'd' || key === 'D' || key === 'ArrowRight') { e.preventDefault();
+                    advState.keys.right = false; }
+            });
+
+            // ── Touch controls ──
+            let touchStartX = 0,
+                touchStartY = 0;
+            let touchActive = false;
+
+            mapCanvas.addEventListener('touchstart', (e) => {
+                if (!audioInitialized) initAudio();
+                if (adventureMode && !battleInProgress && !advState.inDialogue) {
+                    const t = e.touches[0];
+                    touchStartX = t.clientX;
+                    touchStartY = t.clientY;
+                    touchActive = true;
+                }
+            }, { passive: true });
+
+            mapCanvas.addEventListener('touchmove', (e) => {
+                if (!touchActive || !adventureMode || battleInProgress || advState.inDialogue) return;
+                const t = e.touches[0];
+                const dx = t.clientX - touchStartX;
+                const dy = t.clientY - touchStartY;
+                if (Math.abs(dx) > 25 || Math.abs(dy) > 25) {
+                    if (Math.abs(dx) > Math.abs(dy)) {
+                        movePlayer(dx > 0 ? 1 : -1, 0);
+                    } else {
+                        movePlayer(0, dy > 0 ? 1 : -1);
+                    }
+                    touchStartX = t.clientX;
+                    touchStartY = t.clientY;
+                }
+            }, { passive: true });
+
+            mapCanvas.addEventListener('touchend', () => {
+                touchActive = false;
+                if (adventureMode && !battleInProgress && !advState.inDialogue) {
+                    // Check if tap on Anomaly
+                    if (advState.creaturesDefeated >= 3 && !advState.gameComplete) {
+                        const dx = Math.abs(advState.playerX - 16);
+                        const dy = Math.abs(advState.playerY - 12);
+                        if (dx <= 1.5 && dy <= 1.5) {
+                            const anomalyNpc = {
+                                id: 'anomaly_battle',
+                                name: 'THE ANOMALY',
+                                battleName: 'THE ANOMALY',
+                                battleVariant: BOSS_TYPE_INDEX,
+                                isBoss: true,
+                                trigger: 'battle'
+                            };
+                            startAdventureBattle(anomalyNpc);
+                            return;
+                        }
+                    }
+                    const nearNpc = advState.npcs.find(n => Math.abs(advState.playerX - n.x) <= 1.2 && Math.abs(
+                        advState.playerY - n.y) <= 1.2);
+                    if (nearNpc) {
+                        interactWithNpc();
+                    }
+                }
+                touchStartX = 0;
+                touchStartY = 0;
+            }, { passive: true });
+
+            // ── Game loop ──
+            function gameLoop() {
+                updateMovement();
+                if (adventureMode && !battleInProgress) {
+                    renderMap();
+                }
+                requestAnimationFrame(gameLoop);
+            }
+
+            // ── Button events ──
+            attackBtn.addEventListener('click', handleAttack);
+
+            hintBtn.addEventListener('click', () => {
+                if (!currentTarget || !battleInProgress) {
+                    setDialogue('🔍 SCAN', 'No target to scan.', false);
+                    return;
+                }
+                const lvl = curLevel();
+                const q = lvl.quadrantOnly ? 'Quadrant I' : `Quadrant ${quadrantOf(currentTarget[0], currentTarget[1])}`;
+                setDialogue('🔍 SCAN',
+                    `x=${currentTarget[0]>0?'right':'left'} of origin, y=${currentTarget[1]>0?'above':'below'} (${q}).`
+                    );
+            });
+
+            nextBtn.addEventListener('click', () => {
+                if (battleInProgress && enemyHp <= 0) {
+                    endBattle(true);
+                } else {
+                    if (adventureMode) {
+                        enterAdventureMode();
+                    } else {
+                        round++;
+                        if (round > totalRounds) {
+                            setDialogue('🏆 COMPLETE', `Battle complete! Final score: ${score}.`, false);
+                            attackBtn.disabled = true;
+                            hintBtn.disabled = true;
+                            nextBtn.disabled = true;
+                            return;
+                        }
+                        spawnEnemy();
+                    }
+                }
+            });
+
+            restartBtn.addEventListener('click', restartBattle);
+            closeOverlay.addEventListener('click', closeOverlayFn);
+            closeInventoryOverlay.addEventListener('click', () => inventoryOverlay.classList.remove('show'));
+            submitTyped.addEventListener('click', submitTypedFn);
+            typedInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitTypedFn(); });
+
+            saveBtn.addEventListener('click', saveGame);
+
+            tutorBtn.addEventListener('click', () => {
+                tutorOverlay.classList.add('show');
+                if (tutorMessages.length === 0) {
+                    addBubble('tutor',
+                        "Hey trainer! I'm Prof. Axis. Ask me anything about coordinates!");
+                }
+                tutorInput.focus();
+            });
+            closeTutorOverlay.addEventListener('click', () => tutorOverlay.classList.remove('show'));
+            tutorSend.addEventListener('click', sendTutorMessage);
+            tutorInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendTutorMessage(); });
+
+            // ── restart ──
+            function restartBattle() {
+                score = 0;
+                round = 1;
+                playerHp = PLAYER_HP_SEGMENTS;
+                advState.creaturesDefeated = 0;
+                advState.playerX = 10;
+                advState.playerY = 8;
+                advState.npcs = JSON.parse(JSON.stringify(NPCs));
+                advState.inDialogue = false;
+                advState.currentNpc = null;
+                advState.dialogueIndex = 0;
+                advState.keys = { up: false, down: false, left: false, right: false };
+                advState.inventory = { health_potion: 2, key_fragment: 0 };
+                advState.gameComplete = false;
+                advState.chapterIndex = 0;
+                mapData = generateMap();
+                advState.map = mapData;
+                battleTransition.classList.remove('active');
+                if (typeParticleTimer) { clearInterval(typeParticleTimer);
+                    typeParticleTimer = null; }
+                initPlayer();
+                if (adventureMode) {
+                    enterAdventureMode();
+                    questText.textContent = 'Explore the Lost Grid. Defeat 3 creatures to find the Anomaly!';
+                    renderMap();
+                } else {
+                    spawnEnemy();
+                }
+                updateHud();
+                updateInventoryHud();
+                attackBtn.disabled = false;
+                hintBtn.disabled = false;
+                nextBtn.disabled = true;
+                battleInProgress = false;
+                setDialogue('📜 STORY', 'The Lost Grid awaits. Begin your journey.', false);
+            }
+
+            // ── boot ──
+            buildIntroStars();
+            buildIntroLevelCards();
+            buildTopBarLevels();
+            initPlayer();
+            drawSprite(enemyCanvas, 0, palettes[0]);
+            setDialogue('NARRATOR', 'The Lost Grid awaits. Begin your journey.', false);
+            updateHud();
+            window.addEventListener('resize', () => {});
+
+            // Handle close inventory overlay
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && inventoryOverlay.classList.contains('show')) {
+                    inventoryOverlay.classList.remove('show');
+                }
+            });
+
+            gameLoop();
+
+            console.log('⚡ Coordinate Battle · The Lost Grid — Story & Inventory Edition loaded!');
+            console.log('📖 Features: Full story, 8+ NPCs, inventory, save/load, chiptune audio!');
+        })();
+    </script>
+</body>
+</html>
